@@ -1,0 +1,505 @@
+model{
+  
+  # model
+  for(i in 1:N){
+    ## TB status of each participant
+    reference[i]~dbern(ptbInd[i])
+    hiv[i]~dbern(phiv)
+    sexM[i]~dbern(pmale)
+    ptbInd[i]=1/(1+exp(-ptbInd_linpred[i]))
+    ptbInd_linpred[i]=b0+b1*sexM[i]+b2*hiv[i]+bs1*ageSpline1[i]+bs2*ageSpline2[i]+bs3*ageSpline3[i]+bs4*ageSpline4[i]+ranefPrev[site[i]]
+    
+    # test results for each participant
+    w4ss[i]~dbern(p_r_w4ss[site[i],reference[i]+1])
+    crp[i]~dbern(p_r_crp[site[i],reference[i]+1])
+    cxr[i]~dbern(p_r_cxr[site[i],reference[i]+1])
+    lam[i]~dbern(p_r_lam[site[i],reference[i]+1])
+    poolxpert[i]~dbern(p_r_poolxpert[site[i],reference[i]+1])
+    xpert[i]~dbern(p_r_xpert[site[i],reference[i]+1])
+    ssm[i]~dbern(p_r_ssm[site[i],reference[i]+1])
+  }
+  
+  # sensitivities and specificities (1st element is 1-specificity, 2nd is sensitivity)
+  for(s in 1:nsites){
+    p_r_w4ss[s,1]=ilogit(z[1]+ranef[s,1])
+    p_r_w4ss[s,2]=ilogit(z[2]+ranef[s,2])
+    p_r_crp[s,1]=ilogit(z[3]+ranef[s,3])
+    p_r_crp[s,2]=ilogit(z[4]+ranef[s,4])
+    p_r_cxr[s,1]=ilogit(z[5]+ranef[s,5])
+    p_r_cxr[s,2]=ilogit(z[6]+ranef[s,6])
+    p_r_lam[s,1]=ilogit(z[7]+ranef[s,7])
+    p_r_lam[s,2]=ilogit(z[8]+ranef[s,8])
+    p_r_poolxpert[s,1]=ilogit(z[9]+ranef[s,9])
+    p_r_poolxpert[s,2]=ilogit(z[10]+ranef[s,10])
+    p_r_xpert[s,1]=ilogit(z[11]+ranef[s,11])
+    p_r_xpert[s,2]=ilogit(z[12]+ranef[s,12])
+    p_r_ssm[s,1]=ilogit(z[13]+ranef[s,13])
+    p_r_ssm[s,2]=ilogit(z[14]+ranef[s,14])
+  }
+  
+  # without the random effects (for reporting)
+  p_w4ss[1]=mean(p_r_w4ss[,1])
+  p_w4ss[2]=mean(p_r_w4ss[,2])
+  p_crp[1]=mean(p_r_crp[,1])
+  p_crp[2]=mean(p_r_crp[,2])
+  p_cxr[1]=mean(p_r_cxr[,1])
+  p_cxr[2]=mean(p_r_cxr[,2])
+  p_lam[1]=mean(p_r_lam[,1])
+  p_lam[2]=mean(p_r_lam[,2])
+  p_poolxpert[1]=mean(p_r_poolxpert[,1])
+  p_poolxpert[2]=mean(p_r_poolxpert[,2])
+  p_xpert[1]=mean(p_r_xpert[,1])
+  p_xpert[2]=mean(p_r_xpert[,2])
+  p_ssm[1]=mean(p_r_ssm[,1])
+  p_ssm[2]=mean(p_r_ssm[,2])
+
+  # logits of sensitivities and specificities
+  z[1:14]~dmnorm(mu[1:14], Omega[1:14, 1:14])
+  
+  # random effects
+  for(s in 1:nsites){
+    ranefPrev[s]~dnorm(0,tauR)
+    ranef[s,1:2]~dmnorm(c(0,0),OmegaR[s,1:2,1:2])
+    ranef[s,3:4]~dmnorm(c(0,0),OmegaR[s,3:4,3:4])
+    ranef[s,5:6]~dmnorm(c(0,0),OmegaR[s,5:6,5:6])
+    ranef[s,7:8]~dmnorm(c(0,0),OmegaR[s,7:8,7:8])
+    ranef[s,9:10]~dmnorm(c(0,0),OmegaR[s,9:10,9:10])
+    ranef[s,11:12]~dmnorm(c(0,0),OmegaR[s,11:12,11:12])
+    ranef[s,13:14]~dmnorm(c(0,0),OmegaR[s,13:14,13:14])
+  }
+  
+  # sex, TB & HIV prevalence
+  pmale~dbeta(1/3,1/3)
+  phiv~dbeta(1/3,1/3)
+  ptb=mean(ptbInd)
+  
+  # priors for mu and Omega
+  for(i in 1:14){
+    mu[i]~dnorm(0,1/100)
+  } 
+  Omega~dwish(I[1:14,1:14],15)
+  
+  for(i in 1:14){
+    for(j in 1:14){
+      I[i,j]=ifelse(i==j,1,0)
+    }
+  }
+  
+  # priors for tauR, muR and OmegaR
+  tauR~dgamma(0.01,0.01)
+  for(s in 1:nsites){
+    OmegaR[s,1:2,1:2]~dwish(I[1:2,1:2],3)
+    OmegaR[s,3:4,3:4]~dwish(I[1:2,1:2],3)
+    OmegaR[s,5:6,5:6]~dwish(I[1:2,1:2],3)
+    OmegaR[s,7:8,7:8]~dwish(I[1:2,1:2],3)
+    OmegaR[s,9:10,9:10]~dwish(I[1:2,1:2],3)
+    OmegaR[s,11:12,11:12]~dwish(I[1:2,1:2],3)
+    OmegaR[s,13:14,13:14]~dwish(I[1:2,1:2],3)
+  } 
+  
+  # priors for b0, b1, b2, b3
+  b0inv~dbeta(1/3,1/3)
+  b0=log(b0inv/(1-b0inv))
+  b1~dnorm(0,1/100)
+  b2~dnorm(0,1/100)
+  bs1~dnorm(0,1/100)
+  bs2~dnorm(0,1/100)
+  bs3~dnorm(0,1/100)
+  bs4~dnorm(0,1/100)
+
+  
+  # derived quantities
+  pse.w4ss=p_w4ss[2]
+  pse.crp=p_crp[2]
+  pse.cxr=p_cxr[2]
+  pse.lam=p_lam[2]
+  pse.poolxpert=p_poolxpert[2]
+  pse.xpert=p_xpert[2]
+  pse.ssm=p_ssm[2]
+  
+  psp.w4ss=1-p_w4ss[1]
+  psp.crp=1-p_crp[1]
+  psp.cxr=1-p_cxr[1]
+  psp.lam=1-p_lam[1]
+  psp.poolxpert=1-p_poolxpert[1]
+  psp.xpert=1-p_xpert[1]
+  psp.ssm=1-p_ssm[1]
+  
+  posProp.w4ss=ptb*pse.w4ss+(1-ptb)*(1-psp.w4ss)
+  posProp.crp=ptb*pse.crp+(1-ptb)*(1-psp.crp)
+  posProp.cxr=ptb*pse.cxr+(1-ptb)*(1-psp.cxr)
+  posProp.lam=ptb*pse.lam+(1-ptb)*(1-psp.lam)
+  posProp.poolxpert=ptb*pse.poolxpert+(1-ptb)*(1-psp.poolxpert)
+  posProp.xpert=ptb*pse.xpert+(1-ptb)*(1-psp.xpert)
+  posProp.ssm=ptb*pse.ssm+(1-ptb)*(1-psp.ssm)
+  
+  ppv.w4ss=ptb*pse.w4ss/(ptb*pse.w4ss+(1-ptb)*(1-psp.w4ss))
+  ppv.crp=ptb*pse.crp/(ptb*pse.crp+(1-ptb)*(1-psp.crp))
+  ppv.cxr=ptb*pse.cxr/(ptb*pse.cxr+(1-ptb)*(1-psp.cxr))
+  ppv.lam=ptb*pse.lam/(ptb*pse.lam+(1-ptb)*(1-psp.lam))
+  ppv.poolxpert=ptb*pse.poolxpert/(ptb*pse.poolxpert+(1-ptb)*(1-psp.poolxpert))
+  ppv.xpert=ptb*pse.xpert/(ptb*pse.xpert+(1-ptb)*(1-psp.xpert))
+  ppv.ssm=ptb*pse.ssm/(ptb*pse.ssm+(1-ptb)*(1-psp.ssm))
+
+  npv.w4ss=(1-ptb)*psp.w4ss/((1-ptb)*psp.w4ss+ptb*(1-pse.w4ss))
+  npv.crp=(1-ptb)*psp.crp/((1-ptb)*psp.crp+ptb*(1-pse.crp))
+  npv.cxr=(1-ptb)*psp.cxr/((1-ptb)*psp.cxr+ptb*(1-pse.cxr))
+  npv.lam=(1-ptb)*psp.lam/((1-ptb)*psp.lam+ptb*(1-pse.lam))
+  npv.poolxpert=(1-ptb)*psp.poolxpert/((1-ptb)*psp.poolxpert+ptb*(1-pse.poolxpert))
+  npv.xpert=(1-ptb)*psp.xpert/((1-ptb)*psp.xpert+ptb*(1-pse.xpert))
+  npv.ssm=(1-ptb)*psp.ssm/((1-ptb)*psp.ssm+ptb*(1-pse.ssm))
+  
+  dyt.w4ss~dbeta(sum(w4ss)+1/3,N-sum(w4ss)+1/3)
+  dyt.crp~dbeta(sum(crp)+1/3,N-sum(crp)+1/3)
+  dyt.cxr~dbeta(sum(cxr)+1/3,N-sum(cxr)+1/3)
+  dyt.lam~dbeta(sum(lam)+1/3,N-sum(lam)+1/3)
+  dyt.poolxpert~dbeta(sum(poolxpert)+1/3,N-sum(poolxpert)+1/3)
+  dyt.xpert~dbeta(sum(xpert)+1/3,N-sum(xpert)+1/3)
+  dyt.ssm~dbeta(sum(ssm)+1/3,N-sum(ssm)+1/3)
+
+  #dyd.w4ss~dbeta(sum(w4ss)+1/3,sum(reference)-sum(w4ss)+1/3) # risk that the second parameter is <0...
+  #dyd.crp~dbeta(sum(crp)+1/3,sum(reference)-sum(crp)+1/3) # risk that the second parameter is <0...
+  #dyd.cxr~dbeta(sum(cxr)+1/3,sum(reference)-sum(cxr)+1/3) # risk that the second parameter is <0...
+  #dyd.lam~dbeta(sum(lam)+1/3,sum(reference)-sum(lam)+1/3) # risk that the second parameter is <0...
+  #dyd.poolxpert~dbeta(sum(poolxpert)+1/3,sum(reference)-sum(poolxpert)+1/3) # risk that the second parameter is <0...
+  #dyd.xpert~dbeta(sum(xpert)+1/3,sum(reference)-sum(xpert)+1/3) # risk that the second parameter is <0...
+  #dyd.ssm~dbeta(sum(ssm)+1/3,sum(reference)-sum(ssm)+1/3) # risk that the second parameter is <0...
+  
+  # conditional probability parameters
+  posProp.cxr_crp~dbeta(sum(crp*cxr)+1/3,sum(cxr)-sum(crp*cxr)+1/3)
+  ppv.cxr_crp~dbeta(sum(crp*cxr*reference)+1/3,sum(crp*cxr)-sum(crp*cxr*reference)+1/3)
+  npv.cxr_crp~dbeta(sum((1-crp)*cxr*(1-reference))+1/3,sum((1-crp)*cxr)-sum((1-crp)*cxr*(1-reference))+1/3)
+  
+  posProp.cxr_crp_poolxpert~dbeta(sum(poolxpert*crp*cxr)+1/3,sum(crp*cxr)-sum(poolxpert*crp*cxr)+1/3)
+  ppv.cxr_crp_poolxpert~dbeta(sum(poolxpert*crp*cxr*reference)+1/3,sum(poolxpert*crp*cxr)-sum(poolxpert*crp*cxr*reference)+1/3)
+  npv.cxr_crp_poolxpert~dbeta(sum((1-poolxpert)*crp*cxr*(1-reference))+1/3,sum((1-poolxpert)*crp*cxr)-sum((1-poolxpert)*crp*cxr*(1-reference))+1/3)
+
+  posProp.cxr_crp_poolxpert_xpert~dbeta(sum(xpert*poolxpert*crp*cxr)+1/3,sum(poolxpert*crp*cxr)-sum(xpert*poolxpert*crp*cxr)+1/3)
+  ppv.cxr_crp_poolxpert_xpert~dbeta(sum(xpert*poolxpert*crp*cxr*reference)+1/3,sum(xpert*poolxpert*crp*cxr)-sum(xpert*poolxpert*crp*cxr*reference)+1/3)
+  npv.cxr_crp_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*crp*cxr*(1-reference))+1/3,sum((1-xpert)*poolxpert*crp*cxr)-sum((1-xpert)*poolxpert*crp*cxr*(1-reference))+1/3)
+
+  posProp.cxr_crp_xpert~dbeta(sum(xpert*crp*cxr)+1/3,sum(crp*cxr)-sum(xpert*crp*cxr)+1/3)
+  ppv.cxr_crp_xpert~dbeta(sum(xpert*crp*cxr*reference)+1/3,sum(xpert*crp*cxr)-sum(xpert*crp*cxr*reference)+1/3)
+  npv.cxr_crp_xpert~dbeta(sum((1-xpert)*crp*cxr*(1-reference))+1/3,sum((1-xpert)*crp*cxr)-sum((1-xpert)*crp*cxr*(1-reference))+1/3)
+
+  posProp.cxr_crp_lam~dbeta(sum(lam*crp*cxr)+1/3,sum(crp*cxr)-sum(lam*crp*cxr)+1/3)
+  ppv.cxr_crp_lam~dbeta(sum(lam*crp*cxr*reference)+1/3,sum(lam*crp*cxr)-sum(lam*crp*cxr*reference)+1/3)
+  npv.cxr_crp_lam~dbeta(sum((1-lam)*crp*cxr*(1-reference))+1/3,sum((1-lam)*crp*cxr)-sum((1-lam)*crp*cxr*(1-reference))+1/3)
+
+  posProp.cxr_lam~dbeta(sum(lam*cxr)+1/3,sum(cxr)-sum(lam*cxr)+1/3)
+  ppv.cxr_lam~dbeta(sum(lam*cxr*reference)+1/3,sum(lam*cxr)-sum(lam*cxr*reference)+1/3)
+  npv.cxr_lam~dbeta(sum((1-lam)*cxr*(1-reference))+1/3,sum((1-lam)*cxr)-sum((1-lam)*cxr*(1-reference))+1/3)
+  
+  posProp.cxr_lam_poolxpert~dbeta(sum(poolxpert*lam*cxr)+1/3,sum(lam*cxr)-sum(poolxpert*lam*cxr)+1/3)
+  ppv.cxr_lam_poolxpert~dbeta(sum(poolxpert*lam*cxr*reference)+1/3,sum(poolxpert*lam*cxr)-sum(poolxpert*lam*cxr*reference)+1/3)
+  npv.cxr_lam_poolxpert~dbeta(sum((1-poolxpert)*lam*cxr*(1-reference))+1/3,sum((1-poolxpert)*lam*cxr)-sum((1-poolxpert)*lam*cxr*(1-reference))+1/3)
+  
+  posProp.cxr_lam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*lam*cxr)+1/3,sum(poolxpert*lam*cxr)-sum(xpert*poolxpert*lam*cxr)+1/3)
+  ppv.cxr_lam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*lam*cxr*reference)+1/3,sum(xpert*poolxpert*lam*cxr)-sum(xpert*poolxpert*lam*cxr*reference)+1/3)
+  npv.cxr_lam_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*lam*cxr*(1-reference))+1/3,sum((1-xpert)*poolxpert*lam*cxr)-sum((1-xpert)*poolxpert*lam*cxr*(1-reference))+1/3)
+
+  posProp.cxr_lam_xpert~dbeta(sum(xpert*lam*cxr)+1/3,sum(lam*cxr)-sum(xpert*lam*cxr)+1/3)
+  ppv.cxr_lam_xpert~dbeta(sum(xpert*lam*cxr*reference)+1/3,sum(xpert*lam*cxr)-sum(xpert*lam*cxr*reference)+1/3)
+  npv.cxr_lam_xpert~dbeta(sum((1-xpert)*lam*cxr*(1-reference))+1/3,sum((1-xpert)*lam*cxr)-sum((1-xpert)*lam*cxr*(1-reference))+1/3)
+
+  posProp.cxr_crplam~dbeta(sum(ifelse(lam+crp>0,1,0)*cxr)+1/3,sum(cxr)-sum(ifelse(lam+crp>0,1,0)*cxr)+1/3)
+  ppv.cxr_crplam~dbeta(sum(ifelse(lam+crp>0,1,0)*cxr*reference)+1/3,sum(ifelse(lam+crp>0,1,0)*cxr)-sum(ifelse(lam+crp>0,1,0)*cxr*reference)+1/3)
+  npv.cxr_crplam~dbeta(sum((1-ifelse(lam+crp>0,1,0))*cxr*(1-reference))+1/3,sum((1-ifelse(lam+crp>0,1,0))*cxr)-sum((1-ifelse(lam+crp>0,1,0))*cxr*(1-reference))+1/3)
+
+  posProp.cxr_crplam_poolxpert~dbeta(sum(poolxpert*ifelse(lam+crp>0,1,0)*cxr)+1/3,sum(ifelse(lam+crp>0,1,0)*cxr)-sum(poolxpert*ifelse(lam+crp>0,1,0)*cxr)+1/3)
+  ppv.cxr_crplam_poolxpert~dbeta(sum(poolxpert*ifelse(lam+crp>0,1,0)*cxr*reference)+1/3,sum(poolxpert*ifelse(lam+crp>0,1,0)*cxr)-sum(poolxpert*ifelse(lam+crp>0,1,0)*cxr*reference)+1/3)
+  npv.cxr_crplam_poolxpert~dbeta(sum((1-poolxpert)*ifelse(lam+crp>0,1,0)*cxr*(1-reference))+1/3,sum((1-poolxpert)*ifelse(lam+crp>0,1,0)*cxr)-sum((1-poolxpert)*ifelse(lam+crp>0,1,0)*cxr*(1-reference))+1/3)
+
+  posProp.cxr_crplam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(lam+crp>0,1,0)*cxr)+1/3,sum(poolxpert*ifelse(lam+crp>0,1,0)*cxr)-sum(xpert*poolxpert*ifelse(lam+crp>0,1,0)*cxr)+1/3)
+  ppv.cxr_crplam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(lam+crp>0,1,0)*cxr*reference)+1/3,sum(xpert*poolxpert*ifelse(lam+crp>0,1,0)*cxr)-sum(xpert*poolxpert*ifelse(lam+crp>0,1,0)*cxr*reference)+1/3)
+  npv.cxr_crplam_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*ifelse(lam+crp>0,1,0)*cxr*(1-reference))+1/3,sum((1-xpert)*poolxpert*ifelse(lam+crp>0,1,0)*cxr)-sum((1-xpert)*poolxpert*ifelse(lam+crp>0,1,0)*cxr*(1-reference))+1/3)
+  
+  posProp.cxr_crplam_xpert~dbeta(sum(xpert*ifelse(lam+crp>0,1,0)*cxr)+1/3,sum(ifelse(lam+crp>0,1,0)*cxr)-sum(xpert*ifelse(lam+crp>0,1,0)*cxr)+1/3)
+  ppv.cxr_crplam_xpert~dbeta(sum(xpert*ifelse(lam+crp>0,1,0)*cxr*reference)+1/3,sum(xpert*ifelse(lam+crp>0,1,0)*cxr)-sum(xpert*ifelse(lam+crp>0,1,0)*cxr*reference)+1/3)
+  npv.cxr_crplam_xpert~dbeta(sum((1-xpert)*ifelse(lam+crp>0,1,0)*cxr*(1-reference))+1/3,sum((1-xpert)*ifelse(lam+crp>0,1,0)*cxr)-sum((1-xpert)*ifelse(lam+crp>0,1,0)*cxr*(1-reference))+1/3)
+
+  posProp.cxr_poolxpert~dbeta(sum(poolxpert*cxr)+1/3,sum(cxr)-sum(poolxpert*cxr)+1/3)
+  ppv.cxr_poolxpert~dbeta(sum(poolxpert*cxr*reference)+1/3,sum(poolxpert*cxr)-sum(poolxpert*cxr*reference)+1/3)
+  npv.cxr_poolxpert~dbeta(sum((1-poolxpert)*cxr*(1-reference))+1/3,sum((1-poolxpert)*cxr)-sum((1-poolxpert)*cxr*(1-reference))+1/3)
+
+  posProp.cxr_poolxpert_xpert~dbeta(sum(xpert*poolxpert*cxr)+1/3,sum(poolxpert*cxr)-sum(xpert*poolxpert*cxr)+1/3)
+  ppv.cxr_poolxpert_xpert~dbeta(sum(xpert*poolxpert*cxr*reference)+1/3,sum(xpert*poolxpert*cxr)-sum(xpert*poolxpert*cxr*reference)+1/3)
+  npv.cxr_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*cxr*(1-reference))+1/3,sum((1-xpert)*poolxpert*cxr)-sum((1-xpert)*poolxpert*cxr*(1-reference))+1/3)
+
+  posProp.cxr_xpert~dbeta(sum(xpert*cxr)+1/3,sum(cxr)-sum(xpert*cxr)+1/3)
+  ppv.cxr_xpert~dbeta(sum(xpert*cxr*reference)+1/3,sum(xpert*cxr)-sum(xpert*cxr*reference)+1/3)
+  npv.cxr_xpert~dbeta(sum((1-xpert)*cxr*(1-reference))+1/3,sum((1-xpert)*cxr)-sum((1-xpert)*cxr*(1-reference))+1/3)
+
+  posProp.crp_poolxpert~dbeta(sum(poolxpert*crp)+1/3,sum(crp)-sum(poolxpert*crp)+1/3)
+  ppv.crp_poolxpert~dbeta(sum(poolxpert*crp*reference)+1/3,sum(poolxpert*crp)-sum(poolxpert*crp*reference)+1/3)
+  npv.crp_poolxpert~dbeta(sum((1-poolxpert)*crp*(1-reference))+1/3,sum((1-poolxpert)*crp)-sum((1-poolxpert)*crp*(1-reference))+1/3)
+  
+  posProp.crp_poolxpert_xpert~dbeta(sum(xpert*poolxpert*crp)+1/3,sum(poolxpert*crp)-sum(xpert*poolxpert*crp)+1/3)
+  ppv.crp_poolxpert_xpert~dbeta(sum(xpert*poolxpert*crp*reference)+1/3,sum(xpert*poolxpert*crp)-sum(xpert*poolxpert*crp*reference)+1/3)
+  npv.crp_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*crp*(1-reference))+1/3,sum((1-xpert)*poolxpert*crp)-sum((1-xpert)*poolxpert*crp*(1-reference))+1/3)
+  
+  posProp.crp_xpert~dbeta(sum(xpert*crp)+1/3,sum(crp)-sum(xpert*crp)+1/3)
+  ppv.crp_xpert~dbeta(sum(xpert*crp*reference)+1/3,sum(xpert*crp)-sum(xpert*crp*reference)+1/3)
+  npv.crp_xpert~dbeta(sum((1-xpert)*crp*(1-reference))+1/3,sum((1-xpert)*crp)-sum((1-xpert)*crp*(1-reference))+1/3)
+
+  posProp.crp_lam~dbeta(sum(lam*crp)+1/3,sum(crp)-sum(lam*crp)+1/3)
+  ppv.crp_lam~dbeta(sum(lam*crp*reference)+1/3,sum(lam*crp)-sum(lam*crp*reference)+1/3)
+  npv.crp_lam~dbeta(sum((1-lam)*crp*(1-reference))+1/3,sum((1-lam)*crp)-sum((1-lam)*crp*(1-reference))+1/3)
+  
+  posProp.lam_poolxpert~dbeta(sum(poolxpert*lam)+1/3,sum(lam)-sum(poolxpert*lam)+1/3)
+  ppv.lam_poolxpert~dbeta(sum(poolxpert*lam*reference)+1/3,sum(poolxpert*lam)-sum(poolxpert*lam*reference)+1/3)
+  npv.lam_poolxpert~dbeta(sum((1-poolxpert)*lam*(1-reference))+1/3,sum((1-poolxpert)*lam)-sum((1-poolxpert)*lam*(1-reference))+1/3)
+  
+  posProp.lam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*lam)+1/3,sum(poolxpert*lam)-sum(xpert*poolxpert*lam)+1/3)
+  ppv.lam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*lam*reference)+1/3,sum(xpert*poolxpert*lam)-sum(xpert*poolxpert*lam*reference)+1/3)
+  npv.lam_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*lam*(1-reference))+1/3,sum((1-xpert)*poolxpert*lam)-sum((1-xpert)*poolxpert*lam*(1-reference))+1/3)
+  
+  posProp.lam_xpert~dbeta(sum(xpert*lam)+1/3,sum(lam)-sum(xpert*lam)+1/3)
+  ppv.lam_xpert~dbeta(sum(xpert*lam*reference)+1/3,sum(xpert*lam)-sum(xpert*lam*reference)+1/3)
+  npv.lam_xpert~dbeta(sum((1-xpert)*lam*(1-reference))+1/3,sum((1-xpert)*lam)-sum((1-xpert)*lam*(1-reference))+1/3)
+  
+  posProp.cxrcrp~dbeta(sum(ifelse(cxr+crp>0,1,0))+1/3,N-sum(ifelse(cxr+crp>0,1,0))+1/3)
+  ppv.cxrcrp~dbeta(sum(ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(ifelse(cxr+crp>0,1,0))-sum(ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp~dbeta(sum((1-ifelse(cxr+crp>0,1,0))*(1-reference))+1/3,sum(1-ifelse(cxr+crp>0,1,0))-sum((1-ifelse(cxr+crp>0,1,0))*(1-reference))+1/3)
+
+  posProp.cxrcrp_poolxpert~dbeta(sum(poolxpert*ifelse(cxr+crp>0,1,0))+1/3,sum(ifelse(cxr+crp>0,1,0))-sum(poolxpert*ifelse(cxr+crp>0,1,0))+1/3)
+  ppv.cxrcrp_poolxpert~dbeta(sum(poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(poolxpert*ifelse(cxr+crp>0,1,0))-sum(poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp_poolxpert~dbeta(sum((1-poolxpert)*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3,sum((1-poolxpert)*ifelse(cxr+crp>0,1,0))-sum((1-poolxpert)*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrcrp_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))+1/3,sum(poolxpert*ifelse(cxr+crp>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))+1/3)
+  ppv.cxrcrp_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3,sum((1-xpert)*poolxpert*ifelse(cxr+crp>0,1,0))-sum((1-xpert)*poolxpert*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrcrp_xpert~dbeta(sum(xpert*ifelse(cxr+crp>0,1,0))+1/3,sum(ifelse(cxr+crp>0,1,0))-sum(xpert*ifelse(cxr+crp>0,1,0))+1/3)
+  ppv.cxrcrp_xpert~dbeta(sum(xpert*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(xpert*ifelse(cxr+crp>0,1,0))-sum(xpert*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp_xpert~dbeta(sum((1-xpert)*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3,sum((1-xpert)*ifelse(cxr+crp>0,1,0))-sum((1-xpert)*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrcrp_lam~dbeta(sum(lam*ifelse(cxr+crp>0,1,0))+1/3,sum(ifelse(cxr+crp>0,1,0))-sum(lam*ifelse(cxr+crp>0,1,0))+1/3)
+  ppv.cxrcrp_lam~dbeta(sum(lam*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(lam*ifelse(cxr+crp>0,1,0))-sum(lam*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp_lam~dbeta(sum((1-lam)*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3,sum((1-lam)*ifelse(cxr+crp>0,1,0))-sum((1-lam)*ifelse(cxr+crp>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrlam~dbeta(sum(ifelse(cxr+lam>0,1,0))+1/3,N-sum(ifelse(cxr+lam>0,1,0))+1/3)
+  ppv.cxrlam~dbeta(sum(ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(ifelse(cxr+lam>0,1,0))-sum(ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  npv.cxrlam~dbeta(sum((1-ifelse(cxr+lam>0,1,0))*(1-reference))+1/3,sum(1-ifelse(cxr+lam>0,1,0))-sum((1-ifelse(cxr+lam>0,1,0))*(1-reference))+1/3)
+
+  posProp.cxrlam_poolxpert~dbeta(sum(poolxpert*ifelse(cxr+lam>0,1,0))+1/3,sum(ifelse(cxr+lam>0,1,0))-sum(poolxpert*ifelse(cxr+lam>0,1,0))+1/3)
+  ppv.cxrlam_poolxpert~dbeta(sum(poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(poolxpert*ifelse(cxr+lam>0,1,0))-sum(poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  npv.cxrlam_poolxpert~dbeta(sum((1-poolxpert)*ifelse(cxr+lam>0,1,0)*(1-reference))+1/3,sum((1-poolxpert)*ifelse(cxr+lam>0,1,0))-sum((1-poolxpert)*ifelse(cxr+lam>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrlam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))+1/3,sum(poolxpert*ifelse(cxr+lam>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))+1/3)
+  ppv.cxrlam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  npv.cxrlam_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*ifelse(cxr+lam>0,1,0)*(1-reference))+1/3,sum((1-xpert)*poolxpert*ifelse(cxr+lam>0,1,0))-sum((1-xpert)*poolxpert*ifelse(cxr+lam>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrlam_xpert~dbeta(sum(xpert*ifelse(cxr+lam>0,1,0))+1/3,sum(ifelse(cxr+lam>0,1,0))-sum(xpert*ifelse(cxr+lam>0,1,0))+1/3)
+  ppv.cxrlam_xpert~dbeta(sum(xpert*ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(cxr+lam>0,1,0))-sum(xpert*ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  npv.cxrlam_xpert~dbeta(sum((1-xpert)*ifelse(cxr+lam>0,1,0)*(1-reference))+1/3,sum((1-xpert)*ifelse(cxr+lam>0,1,0))-sum((1-xpert)*ifelse(cxr+lam>0,1,0)*(1-reference))+1/3)
+
+  posProp.crplam~dbeta(sum(ifelse(crp+lam>0,1,0))+1/3,N-sum(ifelse(crp+lam>0,1,0))+1/3)
+  ppv.crplam~dbeta(sum(ifelse(crp+lam>0,1,0)*reference)+1/3,sum(ifelse(crp+lam>0,1,0))-sum(ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.crplam~dbeta(sum((1-ifelse(crp+lam>0,1,0))*(1-reference))+1/3,sum(1-ifelse(crp+lam>0,1,0))-sum((1-ifelse(crp+lam>0,1,0))*(1-reference))+1/3)
+
+  posProp.crplam_poolxpert~dbeta(sum(poolxpert*ifelse(crp+lam>0,1,0))+1/3,sum(ifelse(crp+lam>0,1,0))-sum(poolxpert*ifelse(crp+lam>0,1,0))+1/3)
+  ppv.crplam_poolxpert~dbeta(sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(poolxpert*ifelse(crp+lam>0,1,0))-sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.crplam_poolxpert~dbeta(sum((1-poolxpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3,sum((1-poolxpert)*ifelse(crp+lam>0,1,0))-sum((1-poolxpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3)
+
+  posProp.crplam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))+1/3,sum(poolxpert*ifelse(crp+lam>0,1,0))-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))+1/3)
+  ppv.crplam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.crplam_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*ifelse(crp+lam>0,1,0)*(1-reference))+1/3,sum((1-xpert)*poolxpert*ifelse(crp+lam>0,1,0))-sum((1-xpert)*poolxpert*ifelse(crp+lam>0,1,0)*(1-reference))+1/3)
+
+  posProp.crplam_xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0))+1/3,sum(ifelse(crp+lam>0,1,0))-sum(xpert*ifelse(crp+lam>0,1,0))+1/3)
+  ppv.crplam_xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(crp+lam>0,1,0))-sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.crplam_xpert~dbeta(sum((1-xpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3,sum((1-xpert)*ifelse(crp+lam>0,1,0))-sum((1-xpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3)
+  
+  posProp.cxrcrplam~dbeta(sum(ifelse(cxr+crp+lam>0,1,0))+1/3,N-sum(ifelse(cxr+crp+lam>0,1,0))+1/3)
+  ppv.cxrcrplam~dbeta(sum(ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(ifelse(cxr+crp+lam>0,1,0))-sum(ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  npv.cxrcrplam~dbeta(sum((1-ifelse(cxr+crp+lam>0,1,0))*(1-reference))+1/3,sum(1-ifelse(cxr+crp+lam>0,1,0))-sum((1-ifelse(cxr+crp+lam>0,1,0))*(1-reference))+1/3)
+  
+  posProp.cxrcrplam_poolxpert~dbeta(sum(poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3,sum(ifelse(cxr+crp+lam>0,1,0))-sum(poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3)
+  ppv.cxrcrplam_poolxpert~dbeta(sum(poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(poolxpert*ifelse(cxr+crp+lam>0,1,0))-sum(poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  npv.cxrcrplam_poolxpert~dbeta(sum((1-poolxpert)*ifelse(cxr+crp+lam>0,1,0)*(1-reference))+1/3,sum((1-poolxpert)*ifelse(cxr+crp+lam>0,1,0))-sum((1-poolxpert)*ifelse(cxr+crp+lam>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrcrplam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3,sum(poolxpert*ifelse(cxr+crp+lam>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3)
+  ppv.cxrcrplam_poolxpert_xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  npv.cxrcrplam_poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*ifelse(cxr+crp+lam>0,1,0)*(1-reference))+1/3,sum((1-xpert)*poolxpert*ifelse(cxr+crp+lam>0,1,0))-sum((1-xpert)*poolxpert*ifelse(cxr+crp+lam>0,1,0)*(1-reference))+1/3)
+
+  posProp.cxrcrplam_xpert~dbeta(sum(xpert*ifelse(cxr+crp+lam>0,1,0))+1/3,sum(ifelse(cxr+crp+lam>0,1,0))-sum(xpert*ifelse(cxr+crp+lam>0,1,0))+1/3)
+  ppv.cxrcrplam_xpert~dbeta(sum(xpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(cxr+crp+lam>0,1,0))-sum(xpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  npv.cxrcrplam_xpert~dbeta(sum((1-xpert)*ifelse(cxr+crp+lam>0,1,0)*(1-reference))+1/3,sum((1-xpert)*ifelse(cxr+crp+lam>0,1,0))-sum((1-xpert)*ifelse(cxr+crp+lam>0,1,0)*(1-reference))+1/3)
+  
+  posProp.poolxpert_xpert~dbeta(sum(xpert*poolxpert)+1/3,sum(poolxpert)-sum(xpert*poolxpert)+1/3)
+  ppv.poolxpert_xpert~dbeta(sum(xpert*poolxpert*reference)+1/3,sum(xpert*poolxpert)-sum(xpert*poolxpert*reference)+1/3)
+  npv.poolxpert_xpert~dbeta(sum((1-xpert)*poolxpert*(1-reference))+1/3,sum((1-xpert)*poolxpert)-sum((1-xpert)*poolxpert*(1-reference))+1/3)
+  
+  # full algorithm performances
+  pse.cxrlam~dbeta(sum(ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(reference)-sum(ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  psp.cxrlam~dbeta(sum(ifelse((1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrlam~dbeta(sum(ifelse(cxr+lam>0,1,0))+1/3,N-sum(ifelse(cxr+lam>0,1,0))+1/3)
+  #dyd.cxrlam~dbeta(sum(ifelse(cxr+lam>0,1,0))+1/3,sum(reference)-sum(ifelse(cxr+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.crplam~dbeta(sum(ifelse(crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(ifelse(crp+lam>0,1,0)*reference)+1/3)
+  psp.crplam~dbeta(sum(ifelse((1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.crplam~dbeta(sum(ifelse(crp+lam>0,1,0))+1/3,N-sum(ifelse(crp+lam>0,1,0))+1/3)
+  #dyd.crplam~dbeta(sum(ifelse(crp+lam>0,1,0))+1/3,sum(reference)-sum(ifelse(crp+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.cxrcrplam~dbeta(sum(ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  psp.cxrcrplam~dbeta(sum(ifelse((1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrcrplam~dbeta(sum(ifelse(cxr+crp+lam>0,1,0))+1/3,N-sum(ifelse(cxr+crp+lam>0,1,0))+1/3)
+  #dyd.cxrcrplam~dbeta(sum(ifelse(cxr+crp+lam>0,1,0))+1/3,sum(reference)-sum(ifelse(cxr+crp+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+
+  pse.cxr.xpert~dbeta(sum(xpert*cxr*reference)+1/3,sum(reference)-sum(xpert*cxr*reference)+1/3)
+  psp.cxr.xpert~dbeta(sum(ifelse(1-xpert+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.xpert~dbeta(sum(xpert*cxr*reference)+1/3,sum(xpert*cxr)-sum(xpert*cxr*reference)+1/3)
+  npv.cxr.xpert~dbeta(sum(ifelse(1-xpert+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-cxr>0,1,0))-sum(ifelse(1-xpert+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.xpert~dbeta(sum(xpert*cxr)+1/3,N-sum(xpert*cxr)+1/3)
+  #dyd.cxr.xpert~dbeta(sum(xpert*cxr)+1/3,sum(reference)-sum(xpert*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxr.lam~dbeta(sum(lam*cxr*reference)+1/3,sum(reference)-sum(lam*cxr*reference)+1/3)
+  psp.cxr.lam~dbeta(sum(ifelse(1-lam+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-lam+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.lam~dbeta(sum(lam*cxr*reference)+1/3,sum(lam*cxr)-sum(lam*cxr*reference)+1/3)
+  npv.cxr.lam~dbeta(sum(ifelse(1-lam+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse(1-lam+1-cxr>0,1,0))-sum(ifelse(1-lam+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.lam~dbeta(sum(lam*cxr)+1/3,N-sum(lam*cxr)+1/3)
+  #dyd.cxr.lam~dbeta(sum(lam*cxr)+1/3,sum(reference)-sum(lam*cxr)+1/3) # risk that the second parameter is <0...
+  pse.crp.xpert~dbeta(sum(xpert*crp*reference)+1/3,sum(reference)-sum(xpert*crp*reference)+1/3)
+  psp.crp.xpert~dbeta(sum(ifelse(1-xpert+1-crp>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-crp>0,1,0)*(1-reference))+1/3)
+  ppv.crp.xpert~dbeta(sum(xpert*crp*reference)+1/3,sum(xpert*crp)-sum(xpert*crp*reference)+1/3)
+  npv.crp.xpert~dbeta(sum(ifelse(1-xpert+1-crp>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-crp>0,1,0))-sum(ifelse(1-xpert+1-crp>0,1,0)*(1-reference))+1/3)
+  dyt.crp.xpert~dbeta(sum(xpert*crp)+1/3,N-sum(xpert*crp)+1/3)
+  #dyd.crp.xpert~dbeta(sum(xpert*crp)+1/3,sum(reference)-sum(xpert*crp)+1/3) # risk that the second parameter is <0...
+  pse.crp.lam~dbeta(sum(lam*crp*reference)+1/3,sum(reference)-sum(lam*crp*reference)+1/3)
+  psp.crp.lam~dbeta(sum(ifelse(1-lam+1-crp>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-lam+1-crp>0,1,0)*(1-reference))+1/3)
+  ppv.crp.lam~dbeta(sum(lam*crp*reference)+1/3,sum(lam*crp)-sum(lam*crp*reference)+1/3)
+  npv.crp.lam~dbeta(sum(ifelse(1-lam+1-crp>0,1,0)*(1-reference))+1/3,sum(ifelse(1-lam+1-crp>0,1,0))-sum(ifelse(1-lam+1-crp>0,1,0)*(1-reference))+1/3)
+  dyt.crp.lam~dbeta(sum(lam*crp)+1/3,N-sum(lam*crp)+1/3)
+  #dyd.crp.lam~dbeta(sum(lam*crp)+1/3,sum(reference)-sum(lam*crp)+1/3) # risk that the second parameter is <0...
+  pse.lam.xpert~dbeta(sum(xpert*lam*reference)+1/3,sum(reference)-sum(xpert*lam*reference)+1/3)
+  psp.lam.xpert~dbeta(sum(ifelse(1-xpert+1-lam>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-lam>0,1,0)*(1-reference))+1/3)
+  ppv.lam.xpert~dbeta(sum(xpert*lam*reference)+1/3,sum(xpert*lam)-sum(xpert*lam*reference)+1/3)
+  npv.lam.xpert~dbeta(sum(ifelse(1-xpert+1-lam>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-lam>0,1,0))-sum(ifelse(1-xpert+1-lam>0,1,0)*(1-reference))+1/3)
+  dyt.lam.xpert~dbeta(sum(xpert*lam)+1/3,N-sum(xpert*lam)+1/3)
+  #dyd.lam.xpert~dbeta(sum(xpert*lam)+1/3,sum(reference)-sum(xpert*lam)+1/3) # risk that the second parameter is <0...
+  pse.poolxpert.xpert~dbeta(sum(xpert*poolxpert*reference)+1/3,sum(reference)-sum(xpert*poolxpert*reference)+1/3)
+  psp.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert>0,1,0)*(1-reference))+1/3)
+  ppv.poolxpert.xpert~dbeta(sum(xpert*poolxpert*reference)+1/3,sum(xpert*poolxpert)-sum(xpert*poolxpert*reference)+1/3)
+  npv.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert>0,1,0))-sum(ifelse(1-xpert+1-poolxpert>0,1,0)*(1-reference))+1/3)
+  dyt.poolxpert.xpert~dbeta(sum(xpert*poolxpert)+1/3,N-sum(xpert*poolxpert)+1/3)
+  #dyd.poolxpert.xpert~dbeta(sum(xpert*poolxpert)+1/3,sum(reference)-sum(xpert*poolxpert)+1/3) # risk that the second parameter is <0...
+  pse.cxrcrp.xpert~dbeta(sum(xpert*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  psp.cxrcrp.xpert~dbeta(sum(ifelse(1-xpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3)
+  ppv.cxrcrp.xpert~dbeta(sum(xpert*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(xpert*ifelse(cxr+crp>0,1,0))-sum(xpert*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp.xpert~dbeta(sum(ifelse(1-xpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+(1-cxr)*(1-crp)>0,1,0))-sum(ifelse(1-xpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrcrp.xpert~dbeta(sum(xpert*ifelse(cxr+crp>0,1,0))+1/3,N-sum(xpert*ifelse(cxr+crp>0,1,0))+1/3)
+  #dyd.cxrcrp.xpert~dbeta(sum(xpert*ifelse(cxr+crp>0,1,0))+1/3,sum(reference)-sum(xpert*ifelse(cxr+crp>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.cxrcrp.lam~dbeta(sum(lam*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(reference)-sum(lam*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  psp.cxrcrp.lam~dbeta(sum(ifelse(1-lam+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-lam+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3)
+  ppv.cxrcrp.lam~dbeta(sum(lam*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(lam*ifelse(cxr+crp>0,1,0))-sum(lam*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp.lam~dbeta(sum(ifelse(1-lam+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-lam+(1-cxr)*(1-crp)>0,1,0))-sum(ifelse(1-lam+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrcrp.lam~dbeta(sum(lam*ifelse(cxr+crp>0,1,0))+1/3,N-sum(lam*ifelse(cxr+crp>0,1,0))+1/3)
+  #dyd.cxrcrp.lam~dbeta(sum(lam*ifelse(cxr+crp>0,1,0))+1/3,sum(reference)-sum(lam*ifelse(cxr+crp>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.cxrlam.xpert~dbeta(sum(xpert*ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  psp.cxrlam.xpert~dbeta(sum(ifelse(1-xpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.cxrlam.xpert~dbeta(sum(xpert*ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(cxr+lam>0,1,0))-sum(xpert*ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  npv.cxrlam.xpert~dbeta(sum(ifelse(1-xpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+(1-cxr)*(1-lam)>0,1,0))-sum(ifelse(1-xpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrlam.xpert~dbeta(sum(xpert*ifelse(cxr+lam>0,1,0))+1/3,N-sum(xpert*ifelse(cxr+lam>0,1,0))+1/3)
+  #dyd.cxrlam.xpert~dbeta(sum(xpert*ifelse(cxr+lam>0,1,0))+1/3,sum(reference)-sum(xpert*ifelse(cxr+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  psp.crplam.xpert~dbeta(sum(ifelse(1-xpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(crp+lam>0,1,0))-sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.crplam.xpert~dbeta(sum(ifelse(1-xpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+(1-crp)*(1-lam)>0,1,0))-sum(ifelse(1-xpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0))+1/3,N-sum(xpert*ifelse(crp+lam>0,1,0))+1/3)
+  #dyd.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0))+1/3,sum(reference)-sum(xpert*ifelse(crp+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.cxrcrplam.xpert~dbeta(sum(xpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  psp.cxrcrplam.xpert~dbeta(sum(ifelse(1-xpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.cxrcrplam.xpert~dbeta(sum(xpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(cxr+crp+lam>0,1,0))-sum(xpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  npv.cxrcrplam.xpert~dbeta(sum(ifelse(1-xpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0))-sum(ifelse(1-xpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrcrplam.xpert~dbeta(sum(xpert*ifelse(cxr+crp+lam>0,1,0))+1/3,N-sum(xpert*ifelse(cxr+crp+lam>0,1,0))+1/3)
+  #dyd.cxrcrplam.xpert~dbeta(sum(xpert*ifelse(cxr+crp+lam>0,1,0))+1/3,sum(reference)-sum(xpert*ifelse(cxr+crp+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  
+  pse.cxr.crp.xpert~dbeta(sum(xpert*crp*cxr*reference)+1/3,sum(reference)-sum(xpert*crp*cxr*reference)+1/3)
+  psp.cxr.crp.xpert~dbeta(sum(ifelse(1-xpert+1-crp+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-crp+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.crp.xpert~dbeta(sum(xpert*crp*cxr*reference)+1/3,sum(xpert*crp*cxr)-sum(xpert*crp*cxr*reference)+1/3)
+  npv.cxr.crp.xpert~dbeta(sum(ifelse(1-xpert+1-crp+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-crp+1-cxr>0,1,0))-sum(ifelse(1-xpert+1-crp+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.crp.xpert~dbeta(sum(xpert*crp*cxr)+1/3,N-sum(xpert*crp*cxr)+1/3)
+  #dyd.cxr.crp.xpert~dbeta(sum(xpert*crp*cxr)+1/3,sum(reference)-sum(xpert*crp*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxr.crp.lam~dbeta(sum(lam*crp*cxr*reference)+1/3,sum(reference)-sum(lam*crp*cxr*reference)+1/3)
+  psp.cxr.crp.lam~dbeta(sum(ifelse(1-lam+1-crp+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-lam+1-crp+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.crp.lam~dbeta(sum(lam*crp*cxr*reference)+1/3,sum(lam*crp*cxr)-sum(lam*crp*cxr*reference)+1/3)
+  npv.cxr.crp.lam~dbeta(sum(ifelse(1-lam+1-crp+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse(1-lam+1-crp+1-cxr>0,1,0))-sum(ifelse(1-lam+1-crp+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.crp.lam~dbeta(sum(lam*crp*cxr)+1/3,N-sum(lam*crp*cxr)+1/3)
+  #dyd.cxr.crp.lam~dbeta(sum(lam*crp*cxr)+1/3,sum(reference)-sum(lam*crp*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxr.lam.xpert~dbeta(sum(xpert*lam*cxr*reference)+1/3,sum(reference)-sum(xpert*lam*cxr*reference)+1/3)
+  psp.cxr.lam.xpert~dbeta(sum(ifelse(1-xpert+1-lam+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-lam+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.lam.xpert~dbeta(sum(xpert*lam*cxr*reference)+1/3,sum(xpert*lam*cxr)-sum(xpert*lam*cxr*reference)+1/3)
+  npv.cxr.lam.xpert~dbeta(sum(ifelse(1-xpert+1-lam+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-lam+1-cxr>0,1,0))-sum(ifelse(1-xpert+1-lam+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.lam.xpert~dbeta(sum(xpert*lam*cxr)+1/3,N-sum(xpert*lam*cxr)+1/3)
+  #dyd.cxr.lam.xpert~dbeta(sum(xpert*lam*cxr)+1/3,sum(reference)-sum(xpert*lam*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxr.poolxpert.xpert~dbeta(sum(xpert*poolxpert*cxr*reference)+1/3,sum(reference)-sum(xpert*poolxpert*cxr*reference)+1/3)
+  psp.cxr.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.poolxpert.xpert~dbeta(sum(xpert*poolxpert*cxr*reference)+1/3,sum(xpert*poolxpert*cxr)-sum(xpert*poolxpert*cxr*reference)+1/3)
+  npv.cxr.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert+1-cxr>0,1,0))-sum(ifelse(1-xpert+1-poolxpert+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.poolxpert.xpert~dbeta(sum(xpert*poolxpert*cxr)+1/3,N-sum(xpert*poolxpert*cxr)+1/3)
+  #dyd.cxr.poolxpert.xpert~dbeta(sum(xpert*poolxpert*cxr)+1/3,sum(reference)-sum(xpert*poolxpert*cxr)+1/3) # risk that the second parameter is <0...
+  pse.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp*reference)+1/3,sum(reference)-sum(xpert*poolxpert*crp*reference)+1/3)
+  psp.crp.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+1-crp>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert+1-crp>0,1,0)*(1-reference))+1/3)
+  ppv.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp*reference)+1/3,sum(xpert*poolxpert*crp)-sum(xpert*poolxpert*crp*reference)+1/3)
+  npv.crp.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+1-crp>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert+1-crp>0,1,0))-sum(ifelse(1-xpert+1-poolxpert+1-crp>0,1,0)*(1-reference))+1/3)
+  dyt.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp)+1/3,N-sum(xpert*poolxpert*crp)+1/3)
+  #dyd.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp)+1/3,sum(reference)-sum(xpert*poolxpert*crp)+1/3) # risk that the second parameter is <0...
+  pse.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam*reference)+1/3,sum(reference)-sum(xpert*poolxpert*lam*reference)+1/3)
+  psp.lam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+1-lam>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert+1-lam>0,1,0)*(1-reference))+1/3)
+  ppv.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam*reference)+1/3,sum(xpert*poolxpert*lam)-sum(xpert*poolxpert*lam*reference)+1/3)
+  npv.lam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+1-lam>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert+1-lam>0,1,0))-sum(ifelse(1-xpert+1-poolxpert+1-lam>0,1,0)*(1-reference))+1/3)
+  dyt.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam)+1/3,N-sum(xpert*poolxpert*lam)+1/3)
+  #dyd.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam)+1/3,sum(reference)-sum(xpert*poolxpert*lam)+1/3) # risk that the second parameter is <0...
+  pse.cxr.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*cxr*reference)+1/3,sum(reference)-sum(xpert*ifelse(crp+lam>0,1,0)*cxr*reference)+1/3)
+  psp.cxr.crplam.xpert~dbeta(sum(ifelse(1-xpert+(1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+(1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*cxr*reference)+1/3,sum(xpert*ifelse(crp+lam>0,1,0)*cxr)-sum(xpert*ifelse(crp+lam>0,1,0)*cxr*reference)+1/3)
+  npv.cxr.crplam.xpert~dbeta(sum(ifelse(1-xpert+(1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+(1-crp)*(1-lam)+1-cxr>0,1,0))-sum(ifelse(1-xpert+(1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*cxr)+1/3,N-sum(xpert*ifelse(crp+lam>0,1,0)*cxr)+1/3)
+  #dyd.cxr.crplam.xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*cxr)+1/3,sum(reference)-sum(xpert*ifelse(crp+lam>0,1,0)*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxr.crplam~dbeta(sum(ifelse(crp+lam>0,1,0)*cxr*reference)+1/3,sum(reference)-sum(ifelse(crp+lam>0,1,0)*cxr*reference)+1/3)
+  psp.cxr.crplam~dbeta(sum(ifelse((1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.crplam~dbeta(sum(ifelse(crp+lam>0,1,0)*cxr*reference)+1/3,sum(ifelse(crp+lam>0,1,0)*cxr)-sum(ifelse(crp+lam>0,1,0)*cxr*reference)+1/3)
+  npv.cxr.crplam~dbeta(sum(ifelse((1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3,sum(ifelse((1-crp)*(1-lam)+1-cxr>0,1,0))-sum(ifelse((1-crp)*(1-lam)+1-cxr>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.crplam~dbeta(sum(ifelse(crp+lam>0,1,0)*cxr)+1/3,N-sum(ifelse(crp+lam>0,1,0)*cxr)+1/3)
+  #dyd.cxr.crplam~dbeta(sum(ifelse(crp+lam>0,1,0)*cxr)+1/3,sum(reference)-sum(ifelse(crp+lam>0,1,0)*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxrcrp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  psp.cxrcrp.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3)
+  ppv.cxrcrp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0)*reference)+1/3)
+  npv.cxrcrp.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)>0,1,0))-sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrcrp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))+1/3,N-sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))+1/3)
+  #dyd.cxrcrp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(cxr+crp>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.cxrlam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  psp.cxrlam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.cxrlam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0)*reference)+1/3)
+  npv.cxrlam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-lam)>0,1,0))-sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrlam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))+1/3,N-sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))+1/3)
+  #dyd.cxrlam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(cxr+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  psp.crplam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.crplam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert+(1-crp)*(1-lam)>0,1,0))-sum(ifelse(1-xpert+1-poolxpert+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))+1/3,N-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))+1/3)
+  #dyd.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  pse.cxrcrplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  psp.cxrcrplam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.cxrcrplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3,sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))-sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0)*reference)+1/3)
+  npv.cxrcrplam.poolxpert.xpert~dbeta(sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0))-sum(ifelse(1-xpert+1-poolxpert+(1-cxr)*(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.cxrcrplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3,N-sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3)
+  #dyd.cxrcrplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(cxr+crp+lam>0,1,0))+1/3) # risk that the second parameter is <0...
+  
+  pse.cxr.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp*cxr*reference)+1/3,sum(reference)-sum(xpert*poolxpert*crp*cxr*reference)+1/3)
+  psp.cxr.crp.poolxpert.xpert~dbeta(sum(ifelse(1-cxr+1-crp+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-cxr+1-crp+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp*cxr*reference)+1/3,sum(xpert*poolxpert*crp*cxr)-sum(xpert*poolxpert*crp*cxr*reference)+1/3)
+  npv.cxr.crp.poolxpert.xpert~dbeta(sum(ifelse(1-cxr+1-crp+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3,sum(ifelse(1-cxr+1-crp+1-poolxpert+1-xpert>0,1,0))-sum(ifelse(1-cxr+1-crp+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp*cxr)+1/3,N-sum(xpert*poolxpert*crp*cxr)+1/3)
+  #dyd.cxr.crp.poolxpert.xpert~dbeta(sum(xpert*poolxpert*crp*cxr)+1/3,sum(reference)-sum(xpert*poolxpert*crp*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxr.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam*cxr*reference)+1/3,sum(reference)-sum(xpert*poolxpert*lam*cxr*reference)+1/3)
+  psp.cxr.lam.poolxpert.xpert~dbeta(sum(ifelse(1-cxr+1-lam+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-cxr+1-lam+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam*cxr*reference)+1/3,sum(xpert*poolxpert*lam*cxr)-sum(xpert*poolxpert*lam*cxr*reference)+1/3)
+  npv.cxr.lam.poolxpert.xpert~dbeta(sum(ifelse(1-cxr+1-lam+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3,sum(ifelse(1-cxr+1-lam+1-poolxpert+1-xpert>0,1,0))-sum(ifelse(1-cxr+1-lam+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam*cxr)+1/3,N-sum(xpert*poolxpert*lam*cxr)+1/3)
+  #dyd.cxr.lam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*lam*cxr)+1/3,sum(reference)-sum(xpert*poolxpert*lam*cxr)+1/3) # risk that the second parameter is <0...
+  pse.cxr.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr*reference)+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr*reference)+1/3)
+  psp.cxr.crplam.poolxpert.xpert~dbeta(sum(ifelse(1-cxr+(1-crp)*(1-lam)+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse(1-cxr+(1-crp)*(1-lam)+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3)
+  ppv.cxr.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr*reference)+1/3,sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr)-sum(xpert*poolxpert*lam*cxr*reference)+1/3)
+  npv.cxr.crplam.poolxpert.xpert~dbeta(sum(ifelse(1-cxr+(1-crp)*(1-lam)+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3,sum(ifelse(1-cxr+(1-crp)*(1-lam)+1-poolxpert+1-xpert>0,1,0))-sum(ifelse(1-cxr+(1-crp)*(1-lam)+1-poolxpert+1-xpert>0,1,0)*(1-reference))+1/3)
+  dyt.cxr.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr)+1/3,N-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr)+1/3)
+  #dyd.cxr.crplam.poolxpert.xpert~dbeta(sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr)+1/3,sum(reference)-sum(xpert*poolxpert*ifelse(crp+lam>0,1,0)*cxr)+1/3) # risk that the second parameter is <0...
+}
