@@ -4843,7 +4843,7 @@ p(x)=\begin{cases}
 <ol type="1">
 <li>TB status is Bernoulli distributed.</li>
 </ol>
-<p><span class="math display">\[T_i\sim\mbox{Bernoulli}(p_{TB})\]</span> with <span class="math inline">\(\mbox{logit}(p_{TB})=\beta_0+\beta_{s}\cdot{sex}+\beta_{h}\cdot{hiv}+\beta_a\cdot\mbox{ageGroup}\)</span>, assuming weakly informative <span class="math inline">\(\cal{N}(0,10)\)</span> priors for the <span class="math inline">\(\beta_j\)</span> parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.</p>
+<p><span class="math display">\[T_i\sim\mbox{Bernoulli}(p_{TB})\]</span> with <span class="math inline">\(\mbox{logit}(p_{TB})=\beta_0+\beta_{s}\cdot\mbox{sex}+\beta_{h}\cdot\mbox{hiv}+\mathbb{\beta}_a\cdot s(\mbox{age})\)</span>, assuming weakly informative <span class="math inline">\(\cal{N}(0,10)\)</span> priors for the <span class="math inline">\(\beta_j\)</span> parameters. <span class="math inline">\(s()\)</span> indicates a restricted cubic / natural spline with 5 knots and <span class="math inline">\(\mathbb{\beta}_a\)</span> is the corresponding vector of parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.</p>
 <ol start="2" type="1">
 <li>Individual test results are Bernoulli distributed, conditional on TB status.</li>
 </ol>
@@ -4912,7 +4912,7 @@ p_{sp,j} &amp;=&amp; \mbox{logit}^{-1}(z_{sp,j})
 <ol type="1">
 <li>TB status is Bernoulli distributed.</li>
 </ol>
-<p><span class="math display">\[T_{l,i}\sim\mbox{Bernoulli}(p_{TB,l})\]</span> with <span class="math inline">\(\mbox{logit}(p_{TB,l})=\beta_0+\beta_{s}\cdot{sex}+\beta_{h}\cdot{hiv}+\beta_a\cdot\mbox{ageGroup}+\beta_l\cdot country\)</span>, assuming weakly informative <span class="math inline">\(\cal{N}(0,10)\)</span> priors for the <span class="math inline">\(\beta_j\)</span> parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.</p>
+<p><span class="math display">\[T_{l,i}\sim\mbox{Bernoulli}(p_{TB,l})\]</span> with <span class="math inline">\(\mbox{logit}(p_{TB})=\beta_0+\beta_{s}\cdot\mbox{sex}+\beta_{h}\cdot\mbox{hiv}+\mathbb{\beta}_a\cdot s(\mbox{age})\)</span>, assuming weakly informative <span class="math inline">\(\cal{N}(0,10)\)</span> priors for the <span class="math inline">\(\beta_j\)</span> parameters. <span class="math inline">\(s()\)</span> indicates a restricted cubic / natural spline with 5 knots and <span class="math inline">\(\mathbb{\beta}_a\)</span> is the corresponding vector of parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.</p>
 <ol start="2" type="1">
 <li>Individual test results are Bernoulli distributed, conditional on TB status.</li>
 </ol>
@@ -4986,7 +4986,7 @@ p_{sp,l,j} &amp;=&amp; \mbox{logit}^{-1}(z_{sp,j}+\nu_{l,j})
 </section>
 <section id="mock-results" class="level2" data-number="5.4">
 <h2 data-number="5.4" class="anchored" data-anchor-id="mock-results"><span class="header-section-number">5.4</span> Mock results</h2>
-<p>This version of the SAP does not include mock-ups as they need to be re-done completely given the change in algorithms being evaluated. While the analysis plan itself is complete, mock-up will only be included in the next version.</p>
+<p>This version of the SAP does not include mock-ups as they need to be re-done completely given the change in algorithms being evaluated. While the analysis plan itself is complete, mock-ups will only be included in the next version.</p>
 <!--
 
 

@@ -633,7 +633,7 @@ With this notation, we can write down the assumptions of the Bayesian MCMC estim
 1. TB status is Bernoulli distributed.
 
 $$T_i\sim\mbox{Bernoulli}(p_{TB})$$
-with $\mbox{logit}(p_{TB})=\beta_0+\beta_{s}\cdot{sex}+\beta_{h}\cdot{hiv}+\beta_a\cdot\mbox{ageGroup}$, assuming weakly informative $\cal{N}(0,10)$ priors for the $\beta_j$ parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.
+with $\mbox{logit}(p_{TB})=\beta_0+\beta_{s}\cdot\mbox{sex}+\beta_{h}\cdot\mbox{hiv}+\mathbb{\beta}_a\cdot s(\mbox{age})$, assuming weakly informative $\cal{N}(0,10)$ priors for the $\beta_j$ parameters. $s()$ indicates a restricted cubic / natural spline with 5 knots and $\mathbb{\beta}_a$ is the corresponding vector of parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.
 
 
 2. Individual test results are Bernoulli distributed, conditional on TB status.
@@ -708,7 +708,7 @@ With this notation, we can write down the assumptions for the Bayesian MCMC esti
 1. TB status is Bernoulli distributed.
 
 $$T_{l,i}\sim\mbox{Bernoulli}(p_{TB,l})$$
-with $\mbox{logit}(p_{TB,l})=\beta_0+\beta_{s}\cdot{sex}+\beta_{h}\cdot{hiv}+\beta_a\cdot\mbox{ageGroup}+\beta_l\cdot country$, assuming weakly informative $\cal{N}(0,10)$ priors for the $\beta_j$ parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.
+with $\mbox{logit}(p_{TB})=\beta_0+\beta_{s}\cdot\mbox{sex}+\beta_{h}\cdot\mbox{hiv}+\mathbb{\beta}_a\cdot s(\mbox{age})$, assuming weakly informative $\cal{N}(0,10)$ priors for the $\beta_j$ parameters. $s()$ indicates a restricted cubic / natural spline with 5 knots and $\mathbb{\beta}_a$ is the corresponding vector of parameters. For the analyses stratified by HIV status, the HIV term is dropped from the linear predictor term.
 
 2. Individual test results are Bernoulli distributed, conditional on TB status.
 
@@ -788,7 +788,7 @@ These will include:
 
 ## Mock results
 
-This version of the SAP does not include mock-ups as they need to be re-done completely given the change in algorithms being evaluated. While the analysis plan itself is complete, mock-up will only be included in the next version.
+This version of the SAP does not include mock-ups as they need to be re-done completely given the change in algorithms being evaluated. While the analysis plan itself is complete, mock-ups will only be included in the next version.
 
 <!--
 
