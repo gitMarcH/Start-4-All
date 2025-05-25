@@ -1,0 +1,1093 @@
+---
+title: "Start 4 All Phase 1 - Statistical Analysis Plan"
+author: "Marc Henrion"
+subtitle: "v0.12 (International)"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-depth: 3
+    fig-width: 8
+    fig-height: 6
+    code-fold: true
+    page-layout: full
+#prefer-html: true
+execute:
+  echo: true
+  warning: false
+  error: false
+  message: false
+bibliography: S4A_SAP.json
+---
+
+```{r setup}
+#| include: false
+
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+library(grid)
+library(gridExtra)
+library(bootComb)
+library(rjags)
+library(coda)
+library(MCMCvis)
+
+options(knitr.kable.NA = '.')
+```
+
+
+# TO DO LIST
+
+* Implement the agree combinations / algorithms as shared on 3 May 2024 (and subsequently derived parameter names/list from 13 May 2024).
+
+* Explore use of Decision Curve Analysis (DCA; see Tom's email from 9 April 2024 [https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(24)00029-9/fulltext](https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(24)00029-9/fulltext) and [https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(24)00061-5/fulltext](https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(24)00061-5/fulltext)). DCA was introduced in 2006 [https://doi.org/10.1177%2F0272989X06295361](https://doi.org/10.1177%2F0272989X06295361) and is recommended by TRIPOD for evaluating prediction algorithms [https://doi.org/10.1016%2Fj.eururo.2018.08.038](https://doi.org/10.1016%2Fj.eururo.2018.08.038) and [https://doi.org/10.1016/j.eururo.2014.11.025](https://doi.org/10.1016/j.eururo.2014.11.025).
+
+* Add modelling for synthesizing all PHC data:
+
+    1. Mixed binomial model for IPD meta-analysis.
+    2. Mixed binomial model with covariates for interrogating associations.
+
+
+# List of abbreviations
+
+@tbl-abbr lists all abbreviations used throughout this document.
+
+```{r abbr}
+#| echo: false
+#| label: tbl-abbr
+#| tbl-cap: "List of abbreviations"
+
+dfAbbr<-data.frame(
+  abbr=c("ACF"),
+  details=c("Active case finding; the process of actively identifying people with TB. ACF aims to identify people with TB either in those who do not recognize that they have symptoms, or those who do recognize symptoms but for whatever reason do not, or cannot, access services at health-care facilities.")
+)
+dfAbbr<-rbind(dfAbbr,c("CAD","Computer aided diagnostic"))
+dfAbbr<-rbind(dfAbbr,c("CRP","C reactive protein; a blood inflammatory marker measured using point of care devices or laboratory assays, which is elevated in the presence of infections, inflammatory or neoplastic (cancer) conditions, including TB. WHO recommends CRP as a screening tool for TB among people living with HIV and research studies indicate CRP  could also have a use in TB screening among people not infected with HIV."))
+dfAbbr<-rbind(dfAbbr,c("CXR","Chest x-ray"))
+dfAbbr<-rbind(dfAbbr,c("GA","Gastric aspirate"))
+dfAbbr<-rbind(dfAbbr,c("ICF","Intensified case finding at health facilities; an activity, recommended by the WHO, intended to detect possible TB cases among people attending health facilities for reasons not associated with TB (e.g. general clinics or maternity wards)."))
+dfAbbr<-rbind(dfAbbr,c("IDP","Internally displaced people"))
+dfAbbr<-rbind(dfAbbr,c("LAM","Lipoarabinomannan"))
+dfAbbr<-rbind(dfAbbr,c("NPA","Nasopharyngeal aspiration"))
+dfAbbr<-rbind(dfAbbr,c("NPV","Negative predictive value"))
+dfAbbr<-rbind(dfAbbr,c("PCF","Passive case finding"))
+dfAbbr<-rbind(dfAbbr,c("PLWH","People / person living with HIV"))
+dfAbbr<-rbind(dfAbbr,c("POC","Point-of-care"))
+dfAbbr<-rbind(dfAbbr,c("PPV","Positive predictive value"))
+dfAbbr<-rbind(dfAbbr,c("RDT","Rapid diagnostic test"))
+dfAbbr<-rbind(dfAbbr,c("SAP","Statistical Analysis Plan"))
+dfAbbr<-rbind(dfAbbr,c("TB","tuberculosis"))
+dfAbbr<-rbind(dfAbbr,c("MCMC","Markov Chain Monte Carlo"))
+dfAbbr<-rbind(dfAbbr,c("SSM","Sputum Smear Microscopy"))
+#dfAbbr<-rbind(dfAbbr,c("",""))
+
+dfAbbr<-dfAbbr[order(dfAbbr$abbr),]
+
+dfAbbr %>%
+  kable(row.names=F,col.names=c("Abbreviation","Explanation")) %>%
+  kable_styling(full_width=FALSE)
+```
+
+
+# Protocol version
+
+This Statistical Analysis Plan (SAP) v0.11 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
+
+
+# Protocol summary
+
+Start 4 All is a large, UNITAID funded 4-year tuberculosis (TB) study programme, running in 7 countries and consisting of 2 phases:
+
+* Phase 1 (18 months) - cross-sectional surveys to generate data on diagnostic assay performances in different countries and different populations and identifying optimal diagnostic test combinations (for screening purposes).
+
+* Phase 2 (30 months) - a large, multi-country implementation study to evaluate the chosen optiomal combinations in the different settings.
+
+This SAP focuses on Phase 1, with a separate SAP being written for the trial in Phase 2. There will also be a separate analysis plan for the economic evaluation of the diagnostic test combinations.
+
+## Study design
+
+Phase 1 consists of multiple cross-sectional surveys in 7 countries and in different general and marginalised populations within those countries.
+
+```{r countries}
+#| echo: false
+#| label: tbl-countries
+#| tbl-cap: "Summary of study populations, countries, and procedures."
+
+dfCountries<-data.frame(
+  Population=c("Primary health care attenders","District / secondary hospital attenders","Key / marginalised populations (informal settlements, IPDs, refugees, rural poor, pastoralists)","Children"),
+  CurrentApproach=c("Sympton screen; sputum smear microscopy; sputum transport for Xpert","Symptom screen; sputum Xper testing (where available); 1st gen LAM for HIV positive admissions (where avilable)","Symptom screen; mobile chest X-ray (predominantly human interpretation); sputum transport for smear/Xpert/culture","Symptom screen; Xpert testing (stool, NPA, GA, where available); X-ray (human interpretation)"),
+  LocalLaboratory=c("None / basic","Medium / some with Xpert","None","Medium / some with Xpert"),
+  Country=c("Bangladesh, Brazil, Cameroon, Kenya, Malawi, Nigeria, Vietnam","Bangladesh, Cameroon, Kenya, Malawi, Nigeria, Vietnam","Bangladesh, Cameroon, Nigeria","Cameroon, Nigeria"),
+  XrayAvailability=c("No","Yes","Limited / mobile trucks","Yes (if in hospital)"),
+  CaseFindingApproach=c("PCF / ICF","PCF / ICF","PCF / ICF / ACF","PCF / ICF / ACF"),
+  PercentWithTBAmongTested=c("5-15%","10-20%","0.5-10%","8-12%"),
+  AdditionTBDiagnostics=c("CAD CXR, POC CRP, CRP RDT, LAM, pooling Ultra","CAD CXR, POC CRP, CRP RDT, LAM, pooling Ultra","CAD CXR, POC CRP, CRP RDT, LAM, Pooling Ultra","CAD CXR, POC CRP, CRP RDT, LAM, pooling Ultra")
+)
+
+dfCountries %>% 
+  kable(row.names=FALSE,col.names=c("Population","Currently implemented TB screening / diagnosis approach","Local laboratory","Country","X-ray availability","Case finding approach","% with TB among those testes","Additional diagnostic tests and test combinations evaluated as part of Start 4 All"),format = "html")
+# %>% kableExtra::footnote(general_title="",general="NPA = nasopharyngeal aspiration, GA = gastric aspirate, CAD = computer assistant diagnostics, POC CRP = point-of-care CRP (quantitative), CRP RDT = CRP rapid diagnostic test (semiquantitative).")
+```
+
+@tbl-countries summarises the different surveys. This study design was selected because (together with diagnostic clinical trials) surveys are considered the best design for the evaluation of diagnostics. We will evaluate the performance of HIV testing, CRP, computer assisted digital X-Rays (CAD CXR), testing multiple sputum samples by pooling them together and testing the pool with a single Xpert Ultra cartridge and urine lipoarabinomannan (LAM) as screening tests for TB. Although the performance of these tests has been described among individuals with presumptive TB, there are now updated prototypes (e.g. LAM) or software (e.g. CAD CXR) for some platforms, there is limited information on their performance among key populations (e.g. nomads/internally displaced people) and hardly any information on their performance in primary health care settings.
+
+A composite bacteriological reference standard will be used to describe the sensitivity, specificity and positive and negative predictive value of different assays and their combinations. The composite standard will classify participants as ‘bacteriologically confirmed’, if their sputum culture or Xpert Ultra (as a single test) are positive or as ‘unlikely TB’ if they have negative culture AND negative Xpert Ultra results.
+
+@tbl-diagnostics summarises the screening assays evaluated in this study.
+
+```{r diagnostics}
+#| echo: false
+#| label: tbl-diagnostics
+#| tbl-cap: "Summary of screening assays evaluated in this study."
+
+dfDiags<-data.frame(
+  AssayType=c("HIV testing","Point-of-care C-Reactive Protein (quantitative)","Point-of-care C-Reactive Protein (semi-quantitative)","Urine Lateral Flow Test","Molecular diagnostic","Computer-aided detection from digital chest X-ray"),
+  Assay=c("HIV","POC CRP","CRP RDT","FujiLAM","Pooled Xpert","Digital chest X-ray + Qure.ai")
+)
+
+dfDiags %>% 
+  kable(row.names=FALSE,col.names=c("Assay type","Assay"),format = "html")
+```
+
+
+## Study Endpoints
+
+### Primary endpoint
+
+Generation of robust estimates of the diagnostic accuracy and performance of TB diagnostic tests and test combinations in primary healthcare settings and key and vulnerable populations.
+
+###	Secondary study endpoints
+
+* Estimates of the predicted performance of TB diagnostic test combinations and how they perform in specific populations.
+
+* Selection of the optimal TB diagnostic test combinations for implementation and scale-up in primary healthcare settings and key and vulnerable populations in terms of their cost-efficiency, feasibility, and modelled accuracy. 
+
+
+## Sample size
+
+Diagnostic test combinations for the Phase 1 cross-sectional studies are tailored by country and key populations. We envisage conducting one cross sectional study among pastoralists, one study among refugees and IDPs, one among people living in informal settlements, one among the rural poor, and 6 studies among populations in clinical facilities (total of 18 cross sectional studies across 6 countries). Each study will comprise about 600 participants, including a minimum of 100 bacteriologically confirmed participants in most populations. The key populations and number of studies for Phase 1 studies are shown below.
+
+The sample sizes were chosen to comply with the sample size criterion required for WHO guideline development and to achieve an acceptable level of precision for the estimates of the performance of the diagnostic tests. The sample sizes are also suitable for estimating costs and cost-efficiency of the TB diagnostic combinations.
+
+tbl-sampSizeCalc gives the number of TB cases / number of subjects at different prevalence values for TB and different values of precision for 95% CI of point estimate of number of bacteriologically confirmed TB cases identified from each sample population. Populations with low proportions (<10%) of bacteriologically confirmed TB (children, ACF in Vietnam), will use the same cross-sectional design, but the number of bacteriologically confirmed participants will be purposely enriched by inviting participants attending adjacent centers to the study centers. Once included in the study, participants will undergo all tests in the diagnostic combination.
+
+The calculations in tbl-sampSizeCalc have been obtained using the standard Wald normal approximation:
+
+$$
+n_{unadj}=p\cdot(1-p)\cdot\left(\frac{z_{\alpha/2}}{E}\right)^2
+$$
+where $p$ = target proportion (sensitivity in your case; $p=0.9$), E = target precision (or margin-of-error) and $z_{\alpha/2}$ is the (two-sided) critical value from the normal distribution for significance level $\alpha$ (in our case $\alpha=0.05$ and $z_{alpha/2}=1.96$).
+
+```{r sampSizeCalc}
+#| label: tbl-sampSizeCalc
+#| tbl-cap: "Sample size calculation for adults."
+
+sampSize_OnePropCI<-function(p_hat,E=NULL,n=NULL,alpha=0.05,method="WaldNormalApprox"){
+  # p_hat = expected proportion
+  # E = desired error of margin (half width of the confidence interval); if specified then n gets computed
+  # n = fixed sample size; if specified then E gets computed
+  # alpha = 1 - confidence level
+  # method = one of "WaldNormalApprox" or "WilsonScoreApprox"
+  # NOTE: exactly one of n, E needs to be specified -- they cannot both be set to NULL or both be specified
+  
+  z<-qnorm(1-alpha/2)
+  
+  if(is.null(n) & !is.null(E)){
+    if(method=="WaldNormalApprox"){
+      n<-p_hat*(1-p_hat)*(z/E)^2
+    }else if(method=="WilsonScoreApprox"){
+      a<-1
+      b<-(2-p_hat*(1-p_hat)/E^2)*z^2
+      c<-(4*E^2-1)*(z^4)/(4*E^2)
+      n<-(-b + sqrt(b^2-4*a*c))/(2*a)
+    }else{stop("The method parameter needs to be one of WaldNormalApprox or WilsonScoreApprox")}
+    
+    return(n)
+  }else if (is.null(E) & !is.null(n)){
+    if(method=="WilsonScoreApprox"){warning("Argument method is set to WilsonScoreApprox but this will be ignored and WaldNormalApprox be used instead.")}
+    E<-sqrt((p_hat*(1-p_hat)*z^2)/n)
+    
+    return(E)
+  }else{
+    stop("E and n cannot both be NULL or both be specified - you need to specify one of these two and leave the other unspecified / NULL.")
+  }
+  
+}
+
+dfSS<-data.frame(
+  tbPrevalence=c(1:5,8:10,12,15,20,27)/100,
+  prec5=NA,
+  prec6=NA,
+  prec7=NA,
+  prec8=NA,
+  prec10=NA,
+  prec15=NA
+) %>%
+  mutate(
+    prec5=paste(sep=" / ",ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.05)),ceiling(c(ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.05))/tbPrevalence))),
+    prec6=paste(sep=" / ",ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.06)),ceiling(c(ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.06))/tbPrevalence))),
+    prec7=paste(sep=" / ",ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.07)),ceiling(c(ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.07))/tbPrevalence))),
+    prec8=paste(sep=" / ",ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.08)),ceiling(c(ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.08))/tbPrevalence))),
+    prec10=paste(sep=" / ",ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.1)),ceiling(c(ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.1))/tbPrevalence))),
+    prec15=paste(sep=" / ",ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.15)),ceiling(c(ceiling(sampSize_OnePropCI(p_hat=0.9,E=0.15))/tbPrevalence)))
+  ) %>%
+  mutate(tbPrevalence=paste(sep="",100*tbPrevalence,"%"))
+
+dfSS %>%
+  kable(row.names=FALSE,col.names=c("","5%","6%","7%","8%","10%","15%")) %>%
+  kable_styling(full_width=FALSE) %>%
+  add_header_above(c("TB prevalence"=1,"Precision"=6)) %>%
+  add_header_above(c(" "=1,"Expected number microbiologically confirmed / number required in sample"=6))
+```
+
+The resulting number $n_{unadj}$ needs to be adjusted for the TB prevalence, $p_{TB}$:
+
+$$
+n_{adj}=\frac{n_{unadj}}{p_{TB}}
+$$
+
+We further need to take into account different levels of expected attrition (due to loss-to-follow-up; unusable data or other causes):
+
+$$
+n_{final}=\frac{n_{adj}}{1-p_{attr}}
+$$
+
+where $p_{attr}$ is the expected proportion of attrition.
+
+The studies will be analyzed individually by countries, and then as a single multi-country evaluation. The latter aims to achieve the requirements of data for WHO guidance, which requests at least 250 individuals with bacteriologically confirmed TB.
+
+As shown in @tbl-sampSizeTableByCountry, the total sample size to be enrolled varies with the average TB prevalence, target precision and expected loss-to-follow-up (individuals not completing a diagnostic process) in the individual countries and sites. However, with the assumptions shown in @tbl-sampSizeTableByCountry, and assuming an overall proportion of 50% people living with HIV (PLWH) adult participants, we estimate a sample size of 7,200 PLWH and 7,200 HIV-negative persons will include at least 548 PLWH and 548 HIV-negative persons (total 1,096) with a microbiologically confirmed diagnosis of TB.
+
+It is expected that countries with a high burden of HIV-associated TB (Brazil, Cameroon, Kenya, Malawi, Nigeria) will recruit an even higher ratio of PLWH to HIV-negative participants. If the recruitment of PLWH is lower than expected, countries with high burden of HIV-associated TB will enrich recruitment towards this population by recruiting in HIV care and treatment clinics and outpatient centres.
+
+The number of adult males is expected to be higher than the number of females, as more males are affected by TB and a higher proportion of males than females attend primary and secondary clinics. The proportion of participants with TB that is obtained at the end of Phase 1 may vary from the expected proportion of participants with TB due to the inclusion of ICF and ACF in the study in settings in which they are not normally applied (i.e. ICF being conducted in PHC clinics). Additionally, some populations maybe feel more encouraged or discouraged to participate in the study, which may be reflected in the proportion of TB cases for a particular setting and the reasons behind this may be elucidated during the Realist Evaluation.
+
+```{r sampSizeTableByCountry}
+#| label: tbl-sampSizeTableByCountry
+#| tbl-cap: "Sample size for each survey."
+
+dfSSCountry<-data.frame(
+  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Vietnam",3),rep("Malawi",1),"TOTAL"),
+  setting=c("PHC clinics","District hospital","Informal settlement / rural poor ACF","Children","PHC clinics","District hospital","Nomads","IDP / refugees","PHC clinics","District hospital","PHC clinics","District hospital","Informal settlements / rural poor ACF","PHC clinics Aracaju","PHC clinics Maceio","PHC clinics","Informal settlements ACF","Children","PHC clinics",NA),
+  expectedTbProp=c(paste(sep="",c(9,8,5,4,10,20,8,12,9,20,5,3,5,15,27,2,1,0,6),"%"),NA),
+  targetPrecision=c(paste(sep="",c(7,7,10,15,6.5,5.5,7,6,8,5.5,9,12,9,7,5.5,15,17,NA,8),"%"),NA),
+  expectedAttrition=c(paste(sep="",c(20,12,15,20,18,18,12,20,12,18,14,16,14,5,10,20,20,NA,20),"%"),NA),
+  sampleSize=c(c(1000,1000,800,500,1000,700,1000,1000,700,700,1000,1000,1000,500,500,1000,1500,500,1200),NA),
+  expectedAdultTB=c(72,70,34,NA,82,114,70,96,55,114,43,26,43,71,121,16,12,NA,57,1096),
+  adults=c(2800,rep(NA,3),3700,rep(NA,3),1400,NA,3000,rep(NA,2),1000,NA,2500,rep(NA,2),1200,14400),
+  children=c(500,rep(NA,3),rep(NA,4),rep(NA,2),rep(NA,3),rep(NA,2),500,rep(NA,2),NA,1000)
+)
+
+dfSSCountry[dfSSCountry=="NA%"]<-NA
+
+dfSSCountry %>%
+  dplyr::select(!country) %>%
+  kable(row.names=FALSE,col.names=c("Country & setting","Expected proportion with TB","Target precision","Expected attrition","Sample size","Expected adults with TB","Adults","Children"),format.args = list(big.mark = ",")) %>%
+  kable_styling(full_width = FALSE) %>%
+  pack_rows("Cameroon",1,4) %>%
+  pack_rows("Nigeria",5,8) %>%
+  pack_rows("Kenya",9,10) %>%
+  pack_rows("Bangladesh",11,13) %>%
+  pack_rows("Brazil",14,15) %>%
+  pack_rows("Vietnam",16,18) %>%
+  pack_rows("Malawi",19,19) %>%
+  pack_rows("TOTAL",20,20)
+```
+
+
+## Objectives
+
+### Primary objective
+
+To evaluate the performance of selected TB screening tests and combinations of such tests.
+
+### Secondary objectives
+
+* To identify test combinations that increase the proportion of people diagnosed with microbiologically confirmed TB.
+
+* To demonstrate that combinations of current and newer TB tests can facilitate using these tests in locations where they are not currently available.
+
+
+# Data simulation
+
+In order to demonstrate the planned analyses and show computer code, we will simulate data like the one expected to be generated by the study.
+
+```{r dataSim}
+#| label: tbl-dataSim
+#| tbl-cap: "10 random rows from the simulated data."
+
+set.seed(123)
+
+sensSpecMatHiv<-data.frame(
+  sens=rnorm(n=7,mean=0.7,sd=0.02),
+  spec=rnorm(n=7,mean=0.6,sd=0.01)
+)
+rownames(sensSpecMatHiv)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
+sensSpecMatW4ss<-data.frame(
+  sens=rnorm(n=7,mean=0.80,sd=0.02),
+  spec=rnorm(n=7,mean=0.65,sd=0.01)
+)
+rownames(sensSpecMatW4ss)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
+sensSpecMatCrp<-data.frame(
+  sens=rnorm(n=7,mean=0.9,sd=0.02),
+  spec=rnorm(n=7,mean=0.95,sd=0.01)
+)
+rownames(sensSpecMatCrp)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
+sensSpecMatLam<-data.frame(
+  sens=rnorm(n=7,mean=0.82,sd=0.02),
+  spec=rnorm(n=7,mean=0.9,sd=0.01)
+)
+rownames(sensSpecMatLam)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
+sensSpecMatPoolxpert<-data.frame(
+  sens=rnorm(n=7,mean=0.92,sd=0.01),
+  spec=rnorm(n=7,mean=0.97,sd=0.01)
+)
+rownames(sensSpecMatPoolxpert)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
+sensSpecMatCxr<-data.frame(
+  sens=rnorm(n=7,mean=0.88,sd=0.025),
+  spec=rnorm(n=7,mean=0.88,sd=0.02)
+)
+rownames(sensSpecMatCxr)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
+sensSpecMatXpert<-data.frame(
+  sens=rnorm(n=7,mean=0.98,sd=0.005),
+  spec=rnorm(n=7,mean=0.99,sd=0.005)
+)
+sensSpecMatXpert$sens[sensSpecMatXpert$sens>=0.99999]<-0.99999
+sensSpecMatXpert$spec[sensSpecMatXpert$spec>=0.99999]<-0.99999
+rownames(sensSpecMatXpert)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
+
+dfSim<-data.frame(
+  PID=c(paste(sep="_","Ca",1:3300),paste(sep="_","Ni",1:3400),paste(sep="_","Ke",1:1400),paste(sep="_","Ba",1:3000),paste(sep="_","Br_Ar",1:500),paste(sep="_","Br_Ma",1:500),paste(sep="_","Vi",1:3000),paste(sep="_","Ma",1:1200)),
+  region=c(rep("",3300+3400+1400+3000),rep("Aracaju",500),rep("Maceio",500),rep("",3000+1200)),
+  country=c(rep("Cameroon",3300),rep("Nigeria",3400),rep("Kenya",1400),rep("Bangladesh",3000),rep("Brazil",1000),rep("Vietnam",3000),rep("Malawi",1200)),
+  region=c(rep("",3300+3400+1400+3000),rep("Aracaju",500),rep("Maceio",500),rep("",3000+1200)),
+  setting=c(rep("PHC",1000),rep("District",1000),rep("Informal settlements ACF",800),rep("Children",500),rep("PHC",700),rep("District",700),rep("Nomads",1000),rep("IDP / refugees",1000),rep("PHC",700),rep("District",700),rep("PHC",1000),rep("District",1000),rep("Informal settlements ACF",1000),rep("PHC",1000),rep("PHC",1000),rep("Informal settlements ACF",1500),rep("Children",500),rep("PHC",1200)),
+  reference=c(rbinom(n=1000,size=1,prob=0.09),rbinom(n=1000,size=1,prob=0.08),rbinom(n=800,size=1,prob=0.05),rbinom(n=500,size=1,prob=0.04),rbinom(n=700,size=1,prob=0.20),rbinom(n=700,size=1,prob=0.20),rbinom(n=1000,size=1,prob=0.08),rbinom(n=1000,size=1,prob=0.12),rbinom(n=700,size=1,prob=0.09),rbinom(n=700,size=1,prob=0.20),rbinom(n=1000,size=1,prob=0.05),rbinom(n=1000,size=1,prob=0.03),rbinom(n=1000,size=1,prob=0.05),rbinom(n=500,size=1,prob=0.15),rbinom(n=500,size=1,prob=0.27),rbinom(n=1000,size=1,prob=0.02),rbinom(n=1500,size=1,prob=0.01),rbinom(n=500,size=1,prob=0.001),rbinom(n=1200,size=1,prob=0.08))
+  ) %>%
+  dplyr::mutate(
+    hiv=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatHiv[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatHiv[country,"sens"])),
+    w4ss=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatW4ss[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatW4ss[country,"sens"])),
+    crp=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatCrp[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatCrp[country,"sens"])),
+    lam=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatLam[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatLam[country,"sens"])),
+    poolxpert=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatPoolxpert[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatPoolxpert[country,"sens"])),
+    cxr=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatCxr[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatCxr[country,"sens"])),
+    xpert=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatXpert[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatXpert[country,"sens"]))
+)
+
+dfSim[sample(size=10,replace=F,x=1:nrow(dfSim)),] %>%
+  kable(row.names=FALSE) %>%
+  kable_styling(full_width=FALSE)
+
+
+
+write.csv(dfSim,file=paste(sep="","simData_S4A_",gsub(Sys.Date(),pattern="-",replacement=""),".csv"),row.names=F)
+```
+
+@tbl-dataSim shows 10 random rows from the data frame containing all `r nrow(dfSim)` simulated observations.
+
+# Statistical Analysis Plan
+
+The R code to generate the results is embedded in this document. By default it is hidden, but can be displayed by clicking on the `Code` boxes on the right hand side.
+
+## General considerations
+
+The reporting of this study will be prepared in accordance with the STARD and [@bossuytEtal2015] and STROBE [@vonElmEtal2007] guidelines.
+
+All continuous data variables will be summarized using the following descriptive statistics:
+
+* N (size of relevant analysis population)
+* n (size of analysis population without missing values)
+* proportion of complete data for each variable (n/N)
+* arithmetic mean (or geometric mean if more appropriate)
+* standard deviation (SD)
+* median
+* 25th percentile value (P25), 75th percentile value (P75) and interquartile range (IQR)
+* minimum and maximum (where relevant)
+
+The proportion / percentage of observed levels will be reported for all binary and categorical measures. When appropriate, corresponding exact 95% confidence intervals (CIs) for proportions will be included.
+
+For statistical test, a significance level of 5% will be used. All p-values will be reported to 3 decimal digits.
+
+### Reporting conventions
+
+P-values $\geq 0.001$ and $\leq 0.999$ will be reported to 3 decimal places; p-values less than 0.001 will be reported as "< 0.001". The mean, standard deviation, median, IQR and other statistics will be reported to one decimal place greater than the original data. Minimum and maximum values will use the same number of decimal places as the original data. Proportions will be presented as two decimal places; values greater than zero but $<0.01$ will be presented as "< 0.01". Percentages will be reported to 2 decimal places; values greater than zero but $<0.01\%$ will be presented as "< 0.01%"; values greater than $99.99\%$ but less than $100\%$ will be reported as "> 99.99%". Estimated parameters, not on the same scale as raw observations (e.g. regression coefficients) will be reported to 3 significant figures.
+
+### Missing data
+
+As all samples for the test diagnostics get taken at the only study visit, we expect only marginal missing data. Any missing data that does arise we expect to be due to technical reasons unrelated to the outcome of interest. However, we do expect that there will be some missing data, both for individual tests as well as for the reference standard and participant demographic and clinical data. Since we are adopting a Bayesian framework, we can easily incorporate missing data imputation as part of the MCMC process: by specifying distributions for all parameters of interest, the MCMC algorithm will consider any missing data to be no different than the parameters of interest to our investigation. It will essentially impute a value for each sample in the MCMC chains and incorporate the ucnertainty of that imputation through the distribution building up over the full set of MCMC chains and iterations.
+
+
+### Technical details
+
+The R environment for statistical computing (v4.2.2 or later) will be used for all analyses.
+
+All analysis code will be made publicly available under an MIT or GNU GPL v3.0 license on GitHub.
+
+
+## Primary objective analyses
+
+For the primary objective we will estimate performance metrics for individual screening tests as well as combinations ("screening algorithms") of tests. Specifically, we will estimate for each test and each test combination:
+
+* Sensitivity (Se)
+
+* Specificity (Sp)
+
+* Positive predictive value (PPV)
+
+* Negative predictive value (NPV)
+
+* Likelihood ratio for a positive test result (LR+) = Se/(1-Sp)
+
+* Likelihood ratio for a negative test result (LR-) = (1-Se)/Sp
+
+In addition to these we will also compute the proportion of positive tests as this will be needed for the subsequent health economic analysis.
+
+* Proportion of positive test results.
+
+
+### Estimation
+
+We will estimate all of the probability parameters using Bayesian statistics. In Bayesian estimation, rather than calculating point estimates for each parameter of interest, the parameters are considered to be random variables and one estimates a distribution for each parameter. In Bayesian estimation, we estimate the posterior probability density of a given parameter; *posterior* because it is the best-fit distribution after we have observed data. The posterior distribution summarises our beliefs about the likely values for the parameter of interest and it is an update of our beliefs about the parameter before we had observed data -- the prior distribution. The data are generated by a stochastic process and we can compute the likelihood of the data under a distribution for this process. To summarise:
+
+$$\mbox{posterior} = \mbox{prior} \times \mbox{likelihood}$$
+
+For Phase 1 of the Start 4 All programme, the parameters we are mostly interested in sensitivities, specificities, PPVs, NPVs of individual tests and test combinations, conditional PPVs and NPVs and proportions of positive tests at each step of a test combination, TB prevalence) are all probability parameters. The exception will be the positive and negative likelihood ratios, LR+, LR-, but they can be directly derived from the sensitivities and specificieties. The natural parametric distribution for probability parameters is the beta distribution as it has support over the interval $[0,1]$.
+
+A random variable $X$ follows a beta distribution with parameters $a,b$, $X\sim\beta(a,b)$, if
+
+$$
+p(x)=\begin{cases}
+\frac{x^{a-1}(1-x)^{b-1}}{B(a,b)}     &\mbox{ if }x\in[0,1] \\
+0             &\mbox{ otherwise}
+\end{cases}
+$$
+
+where $B(a,b)=\frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)}$.
+
+The mean of this distribution is given by $E(X)=\frac{a}{a+b}$ and the variance is $Var(X)=\frac{a\cdot b}{(a+b)^2(a+b+1)}$. The mode is given by $\frac{a-1}{a+b-2}$, but this is only defined if $a,b>1$.
+
+This means that for each probability parameter we plan to estimate within Start 4 All, we can assume a beta prior distribution, $p\sim\beta(a,b)$, where $p$ is the probability parameter of interest. The corresponding data likelihood will be a binomial likelihood $X\sim Bin(n,p)$, where $X$ is the number of positive results (possibly conditional on prior tests), $n$ the corresponding total number of observations (aka the denominator) and $p$ the same probability parameter as in the prior. One can show that the posterior will also be a beta distribution (since the beta is the conjugate prior for a binomial likelihood) with a closed form solution: $p|X=k\sim\beta(k+a,n-k+b)$. The closed-form solution is computationally fast to compute - no need to use Markov Chain Monte Carlo (MCMC) or Integrated Nested Lapace Approximation (INLA).
+
+For prior, a weakly informative prior can be used, for example the Kerman prior $\beta(1/3,1/3)$ [@kerman2011] or the improper Haldane prior $\beta(0,0)$ [@haldane1948]. The latter has the advantage that it essentially does not provide any prior information and the posterior mean corresponds exactly to the sample mean. The drawback of the Haldane prior is, however, that where k=0 or k=n, it yields an improper posterior distribution. Another drawback is that JAGS, the MCMC sampler we are using, does not allow improper priors. For this reason, we will use the Kerman prior.
+
+Specifically, with the Kerman prior, for a probability parameter of interest $p$, if we observe $X=k$ positive results out of $n$ total results, then the posterior distribution will be a beta distribution with parameters $k+a=k+1/3$ and $n-k+b=n-k+1/3$:
+
+$$p|n,X=k\sim\beta(k+a,n-k+b)$$
+
+The distributional parameters $\alpha=k+a, \beta=n-k+b$ for the posterior will then be directly fed into the health economic modelling to guarantee correct propagation of errors.
+
+The data we will collect is expected to be incomplete - some individuals will have missing results for some of the tests and some may even lack a reference test result, meaning we would not know their TB status.
+
+For these reasons, we will use a hybrid approach, using both the closed form result from above as well as Markov Chain Monte Carlo (MCMC) estimation and modelling directly the individual test results for each test for each participant from each country and setting in the study.
+
+To note that, when we use MCMC, only a relatively small subset of probability parameters (TB prevalence, sensitivities and specificities of individual tests) will generate all of the data, and we can derive, in theory, derive any and all conditional probability parameters (e.g. P(positive LAM | positive CAD-CXR)) directly from this small subset. However this requires some assumptions, specifically that conditional on TB status, the different tests are independent. For Xpert and pooled Xpert, which use the same technology, this can easily be seen not to be true and so we will still derive all conditional parameters individually, but using the MCMC process to impute the missing data while incorporating the uncertainty of these imputations into our estimations.
+
+We will assume that the individual probability parameters are random variables. We will further assume that the set of sensitivity and specificity parameters for the different tests follow a non-trivial joint distribution and we will specify this in the MCMC model.
+
+Let $N$ be the number of participants in the study, let $k=6$ be the number of tests / assays being evaluated, let $T_i, i=1,\ldots,N$ be a binary variable recording the TB status of the $i^{th}$ study participant (for the purpose of Start 4 All we take this as the result of the microbiological confirmation / reference test), let $X_{j,i}, j=\mbox{w4ss, cxr, crp, lam, pXpert, sXpert}, i=1,\ldots,N$ be the individual test results for the different participants, let $p_{se,j}$, $p_{sp,j}$ be the sensitivity and specificity of test $j$, and let $p_{TB}$ be the prevalence of TB in the population. Then the Bayesian MCMC estimation will assume the following distributions:
+
+1. TB status is Bernoulli distributed.
+
+$$T_i\sim\mbox{Bernoulli}(p_{TB})$$
+with $\mbox{logit}(p_{TB})=\beta_0+\beta_{s}\cdot{sex}+\beta_{h}\cdot{hiv}+\beta_a\cdot\mbox{ageGroup}$, assuming weakly informative $\cal{N}(0,100)$ priors for the $\beta_j$ parameters.
+
+
+2. Individual test results are Bernoulli distributed, conditional on TB status.
+
+$$X_{j,i}\sim\left\{
+\begin{array}{ll}
+\mbox{Bernoulli}(p_{se,j}) & \quad\mbox{ if }T_j=1 \\
+\mbox{Bernoulli}(1-p_{sp,j}) & \quad\mbox{ if }T_j=0
+\end{array}
+\right.
+$$
+
+3. Sensitivities, specificities are specified as the inverse logits of real scalars.
+
+$$
+\begin{array}{lll}
+p_{se,j} &=& \mbox{logit}^{-1}(z_{se,j}) \\
+p_{sp,j} &=& \mbox{logit}^{-1}(z_{sp,j})
+\end{array}
+$$
+
+4. These, or in other words, the logits of sensitivities, specificities follow a non-trivial joint multivariate normal distribution.
+
+$$\mathbb{z}=(z_{se,w4ss},z_{sp,w4ss},z_{se,cxr},z_{sp,cxr},\ldots,z_{se,sXpert},z_{sp,sXpert})\sim MV\cal{N}(\mathbb{\mu},\mathbb{\Sigma})$$
+
+5. Priors for the means of the logits are weakly informative.
+
+$$
+\begin{array}{lll}
+\mu_{se,j}\sim\cal{N}(0,100) \\
+\mu_{sp,j}\sim\cal{N}(0,100)
+\end{array}
+$$
+
+6. Prior for the covariance matrix follow a satndard prior distribution for covariance matrices.
+
+$$\Sigma\sim\mbox{invWishart}(\Lambda,\nu)\qquad \Lambda=I,\; \nu=2\cdot k+1$$
+
+7. Assuming that all dependencies between tests are captured through the above joint distribution of sensitivities and specificities and through conditioning on TB status, then all other, conditional, probability parameters can be derived from the sensitivity and specificity parameters. However, as explained earlier, the assumption of conditional independence is most likely unreasonable. For this reason, for each conditional parameter $\pi|\mathbf{T}$ (where $\mathbf{T}$ denote all test results upon which the probability parameter is conditional on), we will assume:
+
+    + $\pi|\mathbf{T}\sim\beta(a=K,b=M-K)$
+
+    + $M,K$ are the random variables for the count of records for which the parameter is being evaluated (M) and the count of positive results (K) respectively and they are derived from the MCMC process (specifically $T_i, X_{i,j}$).
+
+
+8. This final distribution for $\pi|\mathbf{T}$ is not necessarily a beta distribution itself, but we will assume that it can be approximated by one. We will use quantile-matching to identify the best-fitting beta distribution for the resulting empirical distribution from the MCMC output. The beta distribution parameters from this best-fit beta distribution are then entered into the health economic modelling.
+
+```{r primAnalBayes}
+#| message: false
+#| warning: false
+#| echo: false
+
+testList<-c("ssm","crp","cxr","lam","poolxpert","xpert")
+parsList<-read.csv(header=F,"../../output/20240723/pcfIcfColnames.txt")[,1]
+
+jagsFile<-"S4A_jagsPerformanceModel_pcficf_20240717_clean.jags"
+nChains<-4
+nAdapt<-3000
+nBurn<-1000
+nIter<-12000
+
+# define the parameters to extract from the MCMC run
+parsVect1<-c('ptb','pse.w4ss','pse.crp','pse.cxr','pse.lam','pse.poolxpert','pse.xpert','psp.w4ss','psp.crp','psp.cxr','psp.lam','psp.poolxpert','psp.xpert','posProp.w4ss','posProp.crp','posProp.cxr','posProp.lam','posProp.poolxpert','posProp.xpert','ppv.w4ss','ppv.crp','ppv.cxr','ppv.lam','ppv.poolxpert','ppv.xpert','npv.w4ss','npv.crp','npv.cxr','npv.lam','npv.poolxpert','npv.xpert','lrp.w4ss','lrp.crp','lrp.cxr','lrp.lam','lrp.poolxpert','lrp.xpert','lrm.w4ss','lrm.crp','lrm.cxr','lrm.lam','lrm.poolxpert','lrm.xpert','posProp.cxr_crp','ppv.cxr_crp','npv.cxr_crp','posProp.cxr_crp_poolxpert','ppv.cxr_crp_poolxpert','npv.cxr_crp_poolxpert','posProp.cxr_crp_poolxpert_xpert','ppv.cxr_crp_poolxpert_xpert','npv.cxr_crp_poolxpert_xpert','posProp.cxr_crp_xpert','ppv.cxr_crp_xpert','npv.cxr_crp_xpert','posProp.cxr_crp_lam','ppv.cxr_crp_lam','npv.cxr_crp_lam','posProp.cxr_lam','ppv.cxr_lam','npv.cxr_lam','posProp.cxr_lam_poolxpert','ppv.cxr_lam_poolxpert','npv.cxr_lam_poolxpert','posProp.cxr_lam_poolxpert_xpert','ppv.cxr_lam_poolxpert_xpert','npv.cxr_lam_poolxpert_xpert','posProp.cxr_lam_xpert','ppv.cxr_lam_xpert','npv.cxr_lam_xpert','posProp.cxr_crplam','ppv.cxr_crplam','npv.cxr_crplam','posProp.cxr_crplam_poolxpert','ppv.cxr_crplam_poolxpert','npv.cxr_crplam_poolxpert','posProp.cxr_crplam_poolxpert_xpert','ppv.cxr_crplam_poolxpert_xpert','npv.cxr_crplam_poolxpert_xpert','posProp.cxr_crplam_xpert','ppv.cxr_crplam_xpert','npv.cxr_crplam_xpert','posProp.cxr_poolxpert','ppv.cxr_poolxpert','npv.cxr_poolxpert','posProp.cxr_poolxpert_xpert','ppv.cxr_poolxpert_xpert','npv.cxr_poolxpert_xpert','posProp.cxr_xpert','ppv.cxr_xpert','npv.cxr_xpert','posProp.crp_poolxpert','ppv.crp_poolxpert','npv.crp_poolxpert','posProp.crp_poolxpert_xpert','ppv.crp_poolxpert_xpert','npv.crp_poolxpert_xpert','posProp.crp_xpert','ppv.crp_xpert','npv.crp_xpert','posProp.crp_lam','ppv.crp_lam','npv.crp_lam','posProp.lam_poolxpert','ppv.lam_poolxpert','npv.lam_poolxpert','posProp.lam_poolxpert_xpert','ppv.lam_poolxpert_xpert','npv.lam_poolxpert_xpert','posProp.lam_xpert','ppv.lam_xpert','npv.lam_xpert','posProp.cxrcrp','ppv.cxrcrp','npv.cxrcrp','posProp.cxrcrp_poolxpert','ppv.cxrcrp_poolxpert','npv.cxrcrp_poolxpert','posProp.cxrcrp_poolxpert_xpert','ppv.cxrcrp_poolxpert_xpert','npv.cxrcrp_poolxpert_xpert','posProp.cxrcrp_xpert','ppv.cxrcrp_xpert','npv.cxrcrp_xpert','posProp.cxrcrp_lam','ppv.cxrcrp_lam','npv.cxrcrp_lam','posProp.cxrlam','ppv.cxrlam','npv.cxrlam','posProp.cxrlam_poolxpert','ppv.cxrlam_poolxpert','npv.cxrlam_poolxpert','posProp.cxrlam_poolxpert_xpert','ppv.cxrlam_poolxpert_xpert','npv.cxrlam_poolxpert_xpert','posProp.cxrlam_xpert','ppv.cxrlam_xpert','npv.cxrlam_xpert','posProp.crplam','ppv.crplam','npv.crplam','posProp.crplam_poolxpert','ppv.crplam_poolxpert','npv.crplam_poolxpert','posProp.crplam_poolxpert_xpert','ppv.crplam_poolxpert_xpert','npv.crplam_poolxpert_xpert','posProp.crplam_xpert','ppv.crplam_xpert','npv.crplam_xpert','posProp.cxrcrplam','ppv.cxrcrplam','npv.cxrcrplam','posProp.cxrcrplam_poolxpert','ppv.cxrcrplam_poolxpert','npv.cxrcrplam_poolxpert','posProp.cxrcrplam_poolxpert_xpert','ppv.cxrcrplam_poolxpert_xpert','npv.cxrcrplam_poolxpert_xpert','posProp.cxrcrplam_xpert','ppv.cxrcrplam_xpert','npv.cxrcrplam_xpert','posProp.poolxpert_xpert','ppv.poolxpert_xpert','npv.poolxpert_xpert','posProp.ssm','ppv.ssm','npv.ssm')
+parsVect2<-c('pse.ssm','psp.ssm','lrp.ssm','lrm.ssm','pse.cxrlam','psp.cxrlam','lrp.cxrlam','lrm.cxrlam','pse.crplam','psp.crplam','lrp.crplam','lrm.crplam','pse.cxrcrplam','psp.cxrcrplam','lrp.cxrcrplam','lrm.cxrcrplam','pse.cxr.xpert','psp.cxr.xpert','ppv.cxr.xpert','npv.cxr.xpert','lrp.cxr.xpert','lrm.cxr.xpert','pse.cxr.lam','psp.cxr.lam','ppv.cxr.lam','npv.cxr.lam','lrp.cxr.lam','lrm.cxr.lam','pse.crp.xpert','psp.crp.xpert','ppv.crp.xpert','npv.crp.xpert','lrp.crp.xpert','lrm.crp.xpert','pse.crp.lam','psp.crp.lam','ppv.crp.lam','npv.crp.lam','lrp.crp.lam','lrm.crp.lam','pse.lam.xpert','psp.lam.xpert','ppv.lam.xpert','npv.lam.xpert','lrp.lam.xpert','lrm.lam.xpert','pse.poolxpert.xpert','psp.poolxpert.xpert','ppv.poolxpert.xpert','npv.poolxpert.xpert','lrp.poolxpert.xpert','lrm.poolxpert.xpert','pse.cxrcrp.xpert','psp.cxrcrp.xpert','ppv.cxrcrp.xpert','npv.cxrcrp.xpert','lrp.cxrcrp.xpert','lrm.cxrcrp.xpert','pse.cxrcrp.lam','psp.cxrcrp.lam','ppv.cxrcrp.lam','npv.cxrcrp.lam','lrp.cxrcrp.lam','lrm.cxrcrp.lam','pse.cxrlam.xpert','psp.cxrlam.xpert','ppv.cxrlam.xpert','npv.cxrlam.xpert','lrp.cxrlam.xpert','lrm.cxrlam.xpert','pse.crplam.xpert','psp.crplam.xpert','ppv.crplam.xpert','npv.crplam.xpert','lrp.crplam.xpert','lrm.crplam.xpert','pse.cxrcrplam.xpert','psp.cxrcrplam.xpert','ppv.cxrcrplam.xpert','npv.cxrcrplam.xpert','lrp.cxrcrplam.xpert','lrm.cxrcrplam.xpert','pse.cxr.crp.xpert','psp.cxr.crp.xpert','ppv.cxr.crp.xpert','npv.cxr.crp.xpert','lrp.cxr.crp.xpert','lrm.cxr.crp.xpert','pse.cxr.crp.lam','psp.cxr.crp.lam','ppv.cxr.crp.lam','npv.cxr.crp.lam','lrp.cxr.crp.lam','lrm.cxr.crp.lam','pse.cxr.lam.xpert','psp.cxr.lam.xpert','ppv.cxr.lam.xpert','npv.cxr.lam.xpert','lrm.cxr.lam.xpert','lrp.cxr.lam.xpert','pse.cxr.poolxpert.xpert','psp.cxr.poolxpert.xpert','ppv.cxr.poolxpert.xpert','npv.cxr.poolxpert.xpert','lrp.cxr.poolxpert.xpert','lrm.cxr.poolxpert.xpert','pse.crp.poolxpert.xpert','psp.crp.poolxpert.xpert','ppv.crp.poolxpert.xpert','npv.crp.poolxpert.xpert','lrp.crp.poolxpert.xpert','lrm.crp.poolxpert.xpert','pse.lam.poolxpert.xpert','psp.lam.poolxpert.xpert','ppv.lam.poolxpert.xpert','npv.lam.poolxpert.xpert','lrp.lam.poolxpert.xpert','lrm.lam.poolxpert.xpert','pse.cxr.crplam.xpert','psp.cxr.crplam.xpert','ppv.cxr.crplam.xpert','npv.cxr.crplam.xpert','lrp.cxr.crplam.xpert','lrm.cxr.crplam.xpert','pse.cxr.crplam','psp.cxr.crplam','ppv.cxr.crplam','npv.cxr.crplam','lrp.cxr.crplam','lrm.cxr.crplam','pse.cxrcrp.poolxpert.xpert','psp.cxrcrp.poolxpert.xpert','ppv.cxrcrp.poolxpert.xpert','npv.cxrcrp.poolxpert.xpert','lrp.cxrcrp.poolxpert.xpert','lrm.cxrcrp.poolxpert.xpert','pse.cxrlam.poolxpert.xpert','psp.cxrlam.poolxpert.xpert','ppv.cxrlam.poolxpert.xpert','npv.cxrlam.poolxpert.xpert','lrp.cxrlam.poolxpert.xpert','lrm.cxrlam.poolxpert.xpert','pse.crplam.poolxpert.xpert','psp.crplam.poolxpert.xpert','ppv.crplam.poolxpert.xpert','npv.crplam.poolxpert.xpert','lrp.crplam.poolxpert.xpert','lrm.crplam.poolxpert.xpert','pse.cxrcrplam.poolxpert.xpert','psp.cxrcrplam.poolxpert.xpert','ppv.cxrcrplam.poolxpert.xpert','npv.cxrcrplam.poolxpert.xpert','lrp.cxrcrplam.poolxpert.xpert','lrm.cxrcrplam.poolxpert.xpert','pse.cxr.crp.poolxpert.xpert','psp.cxr.crp.poolxpert.xpert','ppv.cxr.crp.poolxpert.xpert','npv.cxr.crp.poolxpert.xpert','lrp.cxr.crp.poolxpert.xpert','lrm.cxr.crp.poolxpert.xpert','pse.cxr.lam.poolxpert.xpert','psp.cxr.lam.poolxpert.xpert','ppv.cxr.lam.poolxpert.xpert','npv.cxr.lam.poolxpert.xpert','lrp.cxr.lam.poolxpert.xpert','lrm.cxr.lam.poolxpert.xpert','pse.cxr.crplam.poolxpert.xpert','psp.cxr.crplam.poolxpert.xpert','ppv.cxr.crplam.poolxpert.xpert','npv.cxr.crplam.poolxpert.xpert','lrp.cxr.crplam.poolxpert.xpert','lrm.cxr.crplam.poolxpert.xpert')
+parsVectPcvIcf<-c(parsVect1,parsVect2)
+#parsVectPcvIcf<-parsVectPcvIcf[!grepl(parsVectPcvIcf,pattern="lrm|lrp")]
+
+# helper functions to process MCMC output
+ssBetaPars<-function(abPars, probs, parData, alpha = 0.05) {
+  res<-sum((qbeta(probs,abPars[1],abPars[2])-quantile(parData,probs=probs))^2)
+  return(res)
+}
+
+identifyBetaPars<-function(probs=c(0.025,0.25,0.5,0.75,0.975), parData, maxiter = 1000){
+  if (length(probs)<2 | sum(probs<0 | probs>1)>0) {
+    stop("There need to be at least 2 probs parameters and the probs parameters need all to be contained within [0,1].")
+  }
+  
+  m<-mean(parData)
+  s<-var(parData)
+  initPars<-c(m*(m*(1-m)/s-1),(1-m)*(m*(1-m)/s-1))
+  
+  res <- suppressWarnings(optim(fn = ssBetaPars, probs=probs, parData=parData, par = initPars, control = list(maxit = maxiter), alpha = alpha))
+  if (res$convergence != 0) {
+    stop("optim() as called by identifyBetaPars() failed to converge.")
+  }
+  return(res$par)
+}
+
+getBetaDistsFromMCMC<-function(mcmcPars,doPlot=FALSE,plotFile="s4a_mcmcPars.pdf"){
+  pars<-colnames(mcmcPars[[1]])
+  pars<-pars[!grepl(pars,pattern="lrm|lrp")]
+  nChains<-length(mcmcPars)
+  
+  g<-list()
+  
+  resDf<-data.frame(
+    par=pars,
+    a=NA,
+    b=NA,
+    distMean=NA,
+    dataMean=NA
+  )
+  
+  parsDf<-mcmcPars[[1]]
+  if(nChains>1){
+    for(j in 2:nChains){
+      parsDf<-rbind(parsDf,mcmcPars[[j]])
+    }
+  }
+  
+  if(doPlot){
+    pdf(width=4*2,height=4*ceiling(length(pars)/2),file=plotFile)
+    par(mfrow=c(ceiling(length(pars)/2),2))
+    for(par in pars){
+      tmpPars<-identifyBetaPars(parData=parsDf[,par])
+      resDf$a[resDf$par==par]<-tmpPars[1]
+      resDf$b[resDf$par==par]<-tmpPars[2]
+      resDf$dataMean[resDf$par==par]<-mean(parsDf[,par])
+      
+      xx<-seq(min(parsDf[,par]),max(parsDf[,par]),length=1e4)
+      yy<-dbeta(xx,tmpPars[1],tmpPars[2])
+      
+      hist(freq=FALSE,parsDf[,par],breaks=100,xlab=par,ylab="density")
+      lines(xx,yy,lwd=2,col="steelblue")
+    }
+    dev.off()
+  }
+  
+  resDf$distMean<-resDf$a/(resDf$a+resDf$b)
+  
+  return(resDf)
+}
+
+# analysis function
+analysisFunBayesBetaPars<-function(dat,parsList,c,r,s,doPlot=FALSE,plotFile="s4a_mcmcPars.pdf",nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile,parsVect){
+  # dat = data frame with the data; requires columns country, region, setting, reference, hiv, w4ss, crp, lam, poolxpert, cxr, xpert
+  # parsList = vector with parameters to extract from / monitor during the MCMC sampling
+  # c = country
+  # r = region
+  # s = setting
+  # doPlot = (logical) idnicatees whether or not to plot the MCMC trace plots and posterior distributions; defaults to FALSE
+  # plotFile = filename for the graph (if doPlot==TRUE)
+  # nChains, nAdapt, nBurn, nIter = MCMC parameters (number of chains, adaptation iterations, burn-in iterations, MCMC iterations)
+  # jagsFile = filename with path to the JAGS model file
+  # parsVect = vector of target parameters
+  
+  # prepare the data
+  dfTmp<-dat %>%
+    dplyr::filter(country==c & region==r & setting==s)
+  
+  datJags<-list(
+    N=nrow(dfTmp),
+    reference=dfTmp$reference,
+    w4ss=dfTmp$w4ss,
+    crp=dfTmp$crp,
+    cxr=dfTmp$cxr,
+    lam=dfTmp$lam,
+    poolxpert=dfTmp$poolxpert,
+    xpert=dfTmp$xpert
+  )
+  
+  # run the JAGS model
+  jagsModel <- jags.model(jagsFile, data=datJags, n.chains = nChains, n.adapt = nAdapt)
+  update(jagsModel,nBurn)
+  parsModel<-coda.samples(model=jagsModel,variable.names=parsVect,n.iter = nIter, na.rm=FALSE)
+  
+  # process the MCMC results
+  betaPars<-getBetaDistsFromMCMC(mcmcPars=parsModel,doPlot=doPlot,plotFile=plotFile)
+  
+  # return the results
+  return(list(mcmcObj=parsModel,betaPars=betaPars))
+}
+
+getLRpLRm<-function(mcmcObj){
+  nChains<-length(mcmcObj)
+  
+  for(j in 1:nChains){
+    pars<-colnames(mcmcObj[[j]])
+    pars<-gsub(pattern="pse",replacement="",pars[grepl(pattern="pse.",pars)])
+    
+    x.thin<-thin(mcmcObj[[j]])
+    x.start<-start(mcmcObj[[j]])
+    x.end<-end(mcmcObj[[j]])
+    
+    for(par in pars){
+      pse<-mcmcObj[[j]][,paste(sep="","pse",par)]
+      psp<-mcmcObj[[j]][,paste(sep="","psp",par)]
+      
+      mcmcObj[[j]]<-as.data.frame(mcmcObj[[j]]) %>%
+        dplyr::mutate(
+          !!paste(sep="","lrp",par) := pse/(1-ifelse(psp<0.99999,psp,0.99999)),
+          !!paste(sep="","lrm",par) := (1-pse)/psp
+        )
+    }
+    
+    mcmcObj[[j]]<-mcmc(data=as.matrix(mcmcObj[[j]]),start=x.start,end=x.end,thin=x.thin)
+  }
+  
+  return(mcmcObj)
+}
+
+# prepare output data frame
+dfResPrimBayes<-data.frame(
+  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Vietnam",3),rep("Malawi",1)),
+  region=c(rep("",4+4+2+3),"Aracaju","Maceio",rep("",3+1)),
+  setting=c("PHC","District","Informal settlements ACF","Children","PHC","District","Nomads","IDP / refugees","PHC","District","PHC","District","Informal settlements ACF","PHC","PHC","PHC","Informal settlements ACF","Children","PHC")
+) %>%
+  dplyr::filter(setting %in% c("PHC","District"))
+
+allRes<-list()
+
+printResults<-FALSE
+
+for(i in 1:nrow(dfResPrimBayes)){
+  print(i)
+  
+  if(dfResPrimBayes$setting[i] %in% c("PHC","District")){
+    res<-analysisFunBayesBetaPars(dat=dfSim,parsList=parsVectPcvIcf,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="","S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",dfResPrimBayes$setting[i],"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFile,parsVect=parsVectPcvIcf)
+    
+    # derive positive and negative likelihood ratios
+    res$mcmcObj<-getLRpLRm(res$mcmcObj)
+    
+    # format the summary
+    mcmcSumDf<-MCMCsummary(res$mcmcObj)
+    mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
+    mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
+    mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
+    mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
+    mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
+    mcmcSumDf<-mcmcSumDf[parsVectPcvIcf,]
+    
+    # print the results
+    if(printResults){
+      mcmcSumDf %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation for country ",c,", region ",r,", setting ",s," (PCF/ICF set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable_styling(full_width=FALSE)
+    }
+    
+    # add the summary to the result object
+    res[["mcmcSummary"]]<-mcmcSumDf
+    
+    allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
+    
+    values<-numeric(0)
+    for(j in 1:length(parsList)){
+      parTmp<-unlist(strsplit(split="\\.",parsList[j]))
+      parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
+      parTmp.par<-parTmp[2]
+      if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
+      values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+    }
+  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements ACF","Nomads")){
+    cat("ACF processing not yet implemented.\n")
+    values<-rep(NA,length(parsList))
+  }else if(dfResPrimBayes$setting[i]=="Children"){
+    cat("Children processing not yet implemented.\n")
+    values<-rep(NA,length(parsList))
+  }else{
+    stop("Invalid setting parameter.")
+  }
+
+  if(i==1){
+    dfRes<-values
+  }else{
+    dfRes<-rbind(dfRes,values)
+  }
+}
+
+dfRes<-cbind(dfResPrimBayes,dfRes)
+colnames(dfRes)<-c(colnames(dfResPrimBayes),parsList)
+
+write.csv(dfRes,row.names=F,file=paste(sep="","mockData_AnalysisResults_PCFICF_",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
+save(allRes,file=paste(sep="","mockData_AnalysisResults_PCFICF_",gsub(pattern="-",replacement="",Sys.Date()),".RData"))
+```
+
+### Screening algorithms / diagnostic combinations
+
+As done above for each test separately, we will evaluate sensitivity, specificity, positive and negative predictive values and proportions of positive test results for each of the screening algorithms listed below. Each of these algorithms ends up with a binary classification of presumed TB or not presumed TB.
+
+Below are the specific algorithms we will evaluate:
+
+
+#### Passive (PCF) / Intensified Case Finding (ICF)
+
+BASELINE
+
+1. SSM	
+
+1-STEP ALGORITMS
+
+2. Xpert 			
+3. LAM
+4. CXR+LAM
+5. CRP+LAM
+6. CXR+CRP+LAM
+
+2-STEP ALGORITHMS
+
+7. CXR --> Xpert 		
+8. CXR --> LAM		
+9. CRP --> Xpert 		
+10. CRP --> LAM
+11. LAM --> Xpert	
+12. Xpert with Pooling --> Xpert	
+13. CXR+CRP --> Xpert		
+14. CXR+CRP --> LAM		
+15. CXR+LAM --> Xpert	
+16. CRP+LAM --> Xpert	
+17. CXR+CRP+LAM --> Xpert
+18. CXR --> CRP+LAM
+
+3-STEP ALGORITHMS
+
+19. CXR --> CRP --> Xpert 	
+20. CXR --> CRP --> LAM	
+21. CXR --> LAM --> Xpert	
+22. CXR --> Xpert with Pooling --> Xpert	
+23. CRP --> Xpert with Pooling --> Xpert	
+24. LAM --> Xpert with Pooling --> Xpert	
+25. CXR --> CRP+LAM --> Xpert	
+26. CXR+CRP --> Xpert with Pooling --> Xpert	
+27. CXR+LAM --> Xpert with Pooling --> Xpert	
+28. CRP+LAM --> Xpert with Pooling --> Xpert	
+29. CXR+CRP+LAM --> Xpert with Pooling --> Xpert	
+
+4-STEP ALGORITHMS
+
+30. CXR --> CRP --> Xpert with Pooling --> Xpert
+31. CXR --> LAM --> Xpert with Pooling --> Xpert
+32. CXR --> CRP+LAM --> Xpert with Pooling --> Xpert
+
+
+Below we present how we could present results for the overall PCF/ICF evaluations - taking the example of Malawi PHC.
+
+```{r}
+res<-allRes[["Malawi__PHC"]]
+
+algoNames<-c("ssm","xpert","lam","cxrlam","crplam","cxrcrplam","cxr.xpert","cxr.lam","crp.xpert","cxr.crplam","crp.lam","lam.xpert","poolxpert.xpert","cxrcrp.xpert","cxrcrp.lam","cxrlam.xpert","crplam.xpert","cxrcrplam.xpert","cxr.crp.xpert","cxr.crp.lam","cxr.lam.xpert","cxr.poolxpert.xpert","crp.poolxpert.xpert","lam.poolxpert.xpert","cxr.crplam.xpert","cxrcrp.poolxpert.xpert","cxrlam.poolxpert.xpert","crplam.poolxpert.xpert","cxrcrplam.poolxpert.xpert","cxr.crp.poolxpert.xpert","cxr.lam.poolxpert.xpert","cxr.crplam.poolxpert.xpert")
+
+dfAlgos<-data.frame(
+  algo=algoNames,
+  sens=NA,
+  spec=NA,
+  ppv=NA,
+  npv=NA,
+  lrp=NA,
+  lrm=NA
+)
+
+for(j in 1:nrow(dfAlgos)){
+  par<-dfAlgos$algo[j]
+  
+  # sensitivity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","pse.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","pse.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$sens[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # specificity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","psp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","psp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$spec[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # PPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","ppv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","ppv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$ppv[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # NPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","npv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","npv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$npv[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # LR+
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrp[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # LR-
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrm.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrm.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrm[j]<-paste(sep=" ",pointEstimate,ci)
+}
+
+dfAlgos %>%
+  kable(caption="PCF/ICF algorithm evaluation for Malawi PHC.") %>%
+  kable_styling(full_width = FALSE)
+```
+
+#### Active Case Finding (ACF)
+
+BASELINE
+
+1. W4SS --> SSM	
+
+1-STEP ALGORITHMS
+
+(none)
+
+2-STEP ALGORITHMS
+
+2. W4SS --> Xpert
+3. W4SS --> LAM
+4. W4SS --> CXR+LAM
+5. W4SS --> CRP+LAM
+6. CXR --> Xpert 
+7. CXR --> LAM
+8. CXR --> CRP+LAM
+9. W4SS+CXR --> Xpert
+10. W4SS+CXR --> LAM
+11. W4SS+CXR --> CRP+LAM
+
+3-STEP ALGORITHMS
+
+12. W4SS --> CXR --> Xpert 	
+13. W4SS --> CXR --> LAM	
+14. W4SS --> CRP --> Xpert 	
+15. W4SS --> CRP --> LAM	
+16. W4SS --> LAM --> Xpert
+17. W4SS --> Xpert with Pooling --> Xpert	
+18. W4SS --> CXR+CRP --> Xpert	
+19. W4SS --> CXR+CRP --> LAM	
+20. W4SS --> CXR+LAM --> Xpert	
+21. W4SS --> CRP+LAM --> Xpert	
+22. W4SS --> CXR+CRP+LAM --> Xpert
+23. CXR --> CRP --> Xpert 	
+24. CXR --> CRP --> LAM	
+25. CXR --> LAM --> Xpert	
+26. CXR --> CRP+LAM --> Xpert	
+27. CXR --> Xpert with Pooling --> Xpert	
+28. W4SS+CXR --> CRP --> Xpert 	
+29. W4SS+CXR --> CRP --> LAM	
+30. W4SS+CXR --> LAM --> Xpert	
+31. W4SS+CXR --> CRP+LAM --> Xpert
+32. W4SS+CXR --> Xpert with Pooling --> Xpert
+
+4-STEP ALGORITHMS
+
+33. W4SS --> CXR --> Xpert with Pooling --> Xpert
+34. W4SS --> CRP --> Xpert with Pooling --> Xpert
+35. W4SS --> LAM --> Xpert with Pooling --> Xpert
+36. W4SS --> CXR+CRP --> Xpert with Pooling --> Xpert
+37. W4SS --> CXR+LAM --> Xpert with Pooling --> Xpert
+38. W4SS --> CRP+LAM --> Xpert with Pooling --> Xpert
+39. W4SS --> CXR+CRP+LAM --> Xpert with Pooling --> Xpert
+40. CXR --> CRP --> Xpert with Pooling --> Xpert
+41. CXR --> LAM --> Xpert with Pooling --> Xpert
+42. CXR --> CRP+LAM --> Xpert with Pooling --> Xpert
+43. W4SS+CXR --> CRP --> Xpert with Pooling --> Xpert
+44. W4SS+CXR --> LAM --> Xpert with Pooling --> Xpert
+45. W4SS+CXR --> CRP+LAM --> Xpert with Pooling --> Xpert
+
+
+### Link-up with the health economic analysis
+
+#### Beta distributions for parameters
+
+As mentioned, all of the above are probability parameters and they will directly inform the decision tree model used in the planned health economic analysis. To allow propagating the uncertainty of each of the above estimates, we will need to input the entire posterior distribution for each parameter into the health economic modelling.
+
+The easiest way, for each parameter, to do this is to use quantile matching to identify the best fitting beta distribution for each empirical distribution. We will then use the estimated beta distribution parameters to feed into the health economic modelling.
+
+To illustrate this computation, @tbl-primAnalBayesBeta shows the matrix of the estimated $a,b$ values, obtained for the posterior distribution for the performance estimates of the individual tests.
+
+```{r}
+# eval: false
+dfResPrimBetaBayes<-data.frame(
+  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Vietnam",3),rep("Malawi",1)),
+  region=c(rep("",4+4+2+3),"Aracaju","Maceio",rep("",3+1)),
+  setting=c("PHC","District","Informal settlements ACF","Children","PHC","District","Nomads","IDP / refugees","PHC","District","PHC","District","Informal settlements ACF","PHC","PHC","PHC","Informal settlements ACF","Children","PHC"),
+  prevalenceTB_a=NA,
+  prevalenceTB_b=NA,
+  posPropHiv_a=NA,
+  posPropHiv_b=NA,
+  sensHiv_a=NA,
+  sensHiv_b=NA,
+  specHiv_a=NA,
+  specHiv_b=NA,
+  ppvHiv_a=NA,
+  ppvHiv_b=NA,
+  npvHiv_a=NA,
+  npvHiv_b=NA,
+  posPropCrp_a=NA,
+  posPropCrp_b=NA,
+  sensCrp_a=NA,
+  sensCrp_b=NA,
+  specCrp_a=NA,
+  specCrp_b=NA,
+  ppvCrp_a=NA,
+  ppvCrp_b=NA,
+  npvCrp_a=NA,
+  npvCrp_b=NA,
+  posPropLam_a=NA,
+  posPropLam_b=NA,
+  sensLam_a=NA,
+  sensLam_b=NA,
+  specLam_a=NA,
+  specLam_b=NA,
+  ppvLam_a=NA,
+  ppvLam_b=NA,
+  npvLam_a=NA,
+  npvLam_b=NA,
+  posPropPoolxpert_a=NA,
+  posPropPoolxpert_b=NA,
+  sensPoolxpert_a=NA,
+  sensPoolxpert_b=NA,
+  specPoolxpert_a=NA,
+  specPoolxpert_b=NA,
+  ppvPoolxpert_a=NA,
+  ppvPoolxpert_b=NA,
+  npvPoolxpert_a=NA,
+  npvPoolxpert_b=NA,
+  posPropCxr_a=NA,
+  posPropCxr_b=NA,
+  sensCxr_a=NA,
+  sensCxr_b=NA,
+  specCxr_a=NA,
+  specCxr_b=NA,
+  ppvCxr_a=NA,
+  ppvCxr_b=NA,
+  npvCxr_a=NA,
+  npvCxr_b=NA
+)
+
+for(i in 1:nrow(dfResPrimBetaBayes)){
+  #dfResPrimBetaBayes[i,-(1:3)]<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBetaBayes$country[i],r=dfResPrimBetaBayes$region[i],s=dfResPrimBetaBayes$setting[i])
+}
+```
+
+```{r primAnalBayesBeta}
+#| label: tbl-primAnalBayesBeta
+#| tbl-cap: "Posterior beta distribution parameters for the unconditional probability parameters."
+
+dfResPrimBetaBayes %>%
+  dplyr::select(!country) %>%
+  kable(row.names=FALSE,col.names=c("Region","Setting",rep(c("a","b"),26)),digits=2) %>%
+  kable_styling(full_width=FALSE) %>%
+  add_header_above(c(" "=2,"Prevalence of TB"=2,rep(c("Proportion of positive tests"=2,"Sensitivity"=2,"Specificity"=2,"PPV"=2,"NPV"=2),5))) %>%
+  add_header_above(c(" "=4,"HIV"=10,"CRP"=10,"LAM"=10,"Pooled Xpert"=10,"Digital chest X-ray + CAD"=10)) %>%
+  pack_rows("Cameroon",1,4) %>%
+  pack_rows("Nigeria",5,8) %>%
+  pack_rows("Kenya",9,10) %>%
+  pack_rows("Bangladesh",11,13) %>%
+  pack_rows("Brazil",14,15) %>%
+  pack_rows("Vietnam",16,18) %>%
+  pack_rows("Malawi",19,19)
+```
+
+
+
+#### Example of one screening algorithm
+
+For this example, we follow the example from the protocol which is also discussed in the health economic analysis plan:
+
+CAD CXR followed (if positive result) by CRP + LAM + HIV tests, followed (if any of CRP, LAM or HIV is positive) by single Xpert.
+
+![The example algorithm (adpated from the study protocol) evaluated in this SAP using simulated data to illustrate how algorithms will be evaluated.](exampleAlgorithm.png)
+
+
+
+## Secondary objectives analyses
+
+Secondary objectives will use the results from the primary analyses. At the stage-gating the scientific advisory board will select the relevant combinations to take forward, while the health economic analysis (see separate analysis plan) will deal with the scale-up and cost-effectiveness objective.
+
+
+# List of figures
+
+# List of tables
+
+@tbl-abbr: List of abbreviations
+
+@tbl-countries: Summary of study populations, countries, and procedures.
+
+@tbl-diagnostics: Summary of diagnostic assays evaluated in this study.
+
+@tbl-sampSizeCalc: Sample size calculation for adults.
+
+@tbl-sampSizeTableByCountry: Sample size for each survey.
+
+@tbl-dataSim: 10 random rows from the simulated data.
+
+@tbl-primAnalBayesSensSpec: Sensitivities and specificities of the evaluated tests.
+
+@tbl-primAnalBayesPpvNpv: Positive and negative predictive values for the evaluated tests.
+
+@tbl-primAnalBayesPosProp: Proportions of positive test results for the evaluated tests.
+
+@tbl-primAnalBayesBeta: Posterior beta distribution parameters for the unconditional probability parameters.
+
+@tbl-primAnalBayesAlgo: Results for an example screening algorithm. We only report the posterior beta distribution parameters for each estimated probability parameter.
+
+
+# References

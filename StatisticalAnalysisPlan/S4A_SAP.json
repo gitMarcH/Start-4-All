@@ -1,0 +1,275 @@
+[
+	{
+		"id": "vonElmEtal2007",
+		"type": "article-journal",
+		"abstract": "Much biomedical research is observational. The reporting of such research is often inadequate, which hampers the assessment of its strengths and weaknesses and of a study's generalisability. The Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) initiative developed recommendations on what should be included in an accurate and complete report of an observational study. We defined the scope of the recommendations to cover three main study designs: cohort, case-control, and cross-sectional studies. We convened a 2-day workshop in September, 2004, with methodologists, researchers, and journal editors to draft a checklist of items. This list was subsequently revised during several meetings of the coordinating group and in e-mail discussions with the larger group of STROBE contributors, taking into account empirical evidence and methodological considerations. The workshop and the subsequent iterative process of consultation and revision resulted in a checklist of 22 items (the STROBE statement) that relate to the title, abstract, introduction, methods, results, and discussion sections of articles.18 items are common to all three study designs and four are specific for cohort, case-control, or cross-sectional studies.A detailed explanation and elaboration document is published separately and is freely available on the websites of PLoS Medicine, Annals of Internal Medicine, and Epidemiology. We hope that the STROBE statement will contribute to improving the quality of reporting of observational studies",
+		"container-title": "Lancet (London, England)",
+		"DOI": "10.1016/S0140-6736(07)61602-X",
+		"ISSN": "1474-547X",
+		"issue": "9596",
+		"journalAbbreviation": "Lancet",
+		"language": "eng",
+		"note": "PMID: 18064739",
+		"page": "1453-1457",
+		"source": "PubMed",
+		"title": "The Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) statement: guidelines for reporting observational studies",
+		"title-short": "The Strengthening the Reporting of Observational Studies in Epidemiology (STROBE) statement",
+		"volume": "370",
+		"author": [
+			{
+				"family": "Elm",
+				"given": "Erik",
+				"non-dropping-particle": "von"
+			},
+			{
+				"family": "Altman",
+				"given": "Douglas G."
+			},
+			{
+				"family": "Egger",
+				"given": "Matthias"
+			},
+			{
+				"family": "Pocock",
+				"given": "Stuart J."
+			},
+			{
+				"family": "Gøtzsche",
+				"given": "Peter C."
+			},
+			{
+				"family": "Vandenbroucke",
+				"given": "Jan P."
+			},
+			{
+				"literal": "STROBE Initiative"
+			}
+		],
+		"issued": {
+			"date-parts": [
+				[
+					"2007",
+					10,
+					20
+				]
+			]
+		}
+	},
+	{
+		"id": "vanBuurenGroothuisOudshoorn2011",
+		"type": "article-journal",
+		"container-title": "Journal of Statistical Software",
+		"DOI": "10.18637/jss.v045.i03",
+		"ISSN": "1548-7660",
+		"issue": "3",
+		"journalAbbreviation": "J. Stat. Soft.",
+		"language": "en",
+		"source": "DOI.org (Crossref)",
+		"title": "<b>mice</b> : Multivariate Imputation by Chained Equations in <i>R</i>",
+		"title-short": "<b>mice</b>",
+		"URL": "http://www.jstatsoft.org/v45/i03/",
+		"volume": "45",
+		"author": [
+			{
+				"family": "Buuren",
+				"given": "Stef",
+				"non-dropping-particle": "van"
+			},
+			{
+				"family": "Groothuis-Oudshoorn",
+				"given": "Karin"
+			}
+		],
+		"accessed": {
+			"date-parts": [
+				[
+					"2023",
+					9,
+					22
+				]
+			]
+		},
+		"issued": {
+			"date-parts": [
+				[
+					"2011"
+				]
+			]
+		}
+	},
+	{
+		"id": "kerman2011",
+		"type": "article-journal",
+		"container-title": "Electronic Journal of Statistics",
+		"DOI": "10.1214/11-EJS648",
+		"ISSN": "1935-7524",
+		"issue": "none",
+		"journalAbbreviation": "Electron. J. Statist.",
+		"source": "DOI.org (Crossref)",
+		"title": "Neutral noninformative and informative conjugate beta and gamma prior distributions",
+		"URL": "https://projecteuclid.org/journals/electronic-journal-of-statistics/volume-5/issue-none/Neutral-noninformative-and-informative-conjugate-beta-and-gamma-prior-distributions/10.1214/11-EJS648.full",
+		"volume": "5",
+		"author": [
+			{
+				"family": "Kerman",
+				"given": "Jouni"
+			}
+		],
+		"accessed": {
+			"date-parts": [
+				[
+					"2024",
+					1,
+					4
+				]
+			]
+		},
+		"issued": {
+			"date-parts": [
+				[
+					"2011",
+					1,
+					1
+				]
+			]
+		}
+	},
+	{
+		"id": "haldane1948",
+		"type": "article-journal",
+		"container-title": "Biometrika",
+		"DOI": "10.2307/2332350",
+		"ISSN": "00063444",
+		"issue": "3/4",
+		"journalAbbreviation": "Biometrika",
+		"page": "297",
+		"source": "DOI.org (Crossref)",
+		"title": "The Precision of Observed Values of Small Frequencies",
+		"URL": "https://www.jstor.org/stable/2332350?origin=crossref",
+		"volume": "35",
+		"author": [
+			{
+				"family": "Haldane",
+				"given": "J. B. S."
+			}
+		],
+		"accessed": {
+			"date-parts": [
+				[
+					"2024",
+					7,
+					2
+				]
+			]
+		},
+		"issued": {
+			"date-parts": [
+				[
+					"1948",
+					12
+				]
+			]
+		}
+	},
+	{
+		"id": "bossuytEtal2015",
+		"type": "article-journal",
+		"container-title": "BMJ",
+		"DOI": "10.1136/bmj.h5527",
+		"ISSN": "1756-1833",
+		"language": "en",
+		"page": "h5527",
+		"source": "DOI.org (Crossref)",
+		"title": "STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies",
+		"title-short": "STARD 2015",
+		"URL": "https://www.bmj.com/lookup/doi/10.1136/bmj.h5527",
+		"author": [
+			{
+				"family": "Bossuyt",
+				"given": "Patrick M"
+			},
+			{
+				"family": "Reitsma",
+				"given": "Johannes B"
+			},
+			{
+				"family": "Bruns",
+				"given": "David E"
+			},
+			{
+				"family": "Gatsonis",
+				"given": "Constantine A"
+			},
+			{
+				"family": "Glasziou",
+				"given": "Paul P"
+			},
+			{
+				"family": "Irwig",
+				"given": "Les"
+			},
+			{
+				"family": "Lijmer",
+				"given": "Jeroen G"
+			},
+			{
+				"family": "Moher",
+				"given": "David"
+			},
+			{
+				"family": "Rennie",
+				"given": "Drummond"
+			},
+			{
+				"family": "De Vet",
+				"given": "Henrica C W"
+			},
+			{
+				"family": "Kressel",
+				"given": "Herbert Y"
+			},
+			{
+				"family": "Rifai",
+				"given": "Nader"
+			},
+			{
+				"family": "Golub",
+				"given": "Robert M"
+			},
+			{
+				"family": "Altman",
+				"given": "Douglas G"
+			},
+			{
+				"family": "Hooft",
+				"given": "Lotty"
+			},
+			{
+				"family": "Korevaar",
+				"given": "Daniël A"
+			},
+			{
+				"family": "Cohen",
+				"given": "Jérémie F"
+			}
+		],
+		"accessed": {
+			"date-parts": [
+				[
+					"2024",
+					7,
+					2
+				]
+			]
+		},
+		"issued": {
+			"date-parts": [
+				[
+					"2015",
+					10,
+					28
+				]
+			]
+		}
+	}
+]
