@@ -1,7 +1,7 @@
 ---
 title: "Start 4 All Phase 1 - Statistical Analysis Plan"
 author: "Marc Henrion"
-subtitle: "v1.0 (International)"
+subtitle: "v1.1 (International)"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 format:
   html:
@@ -34,6 +34,7 @@ library(bootComb)
 library(rjags)
 library(coda)
 library(MCMCvis)
+library(rms)
 
 options(knitr.kable.NA = '.')
 ```
@@ -92,7 +93,26 @@ dfAbbr %>%
 
 # Protocol version
 
-This Statistical Analysis Plan (SAP) v1.0 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
+This Statistical Analysis Plan (SAP) v1.1 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
+
+## Version history
+
+```{r}
+#| echo: false
+#| label: tbl-versionHistory
+#| tbl-cap: "Version history of the SAP since v1.0."
+
+dfHist<-data.frame(
+  Version=c("1.1","1.0"),
+  Date=c("2025-05-25","2025-05-26"),
+  Author=c("Marc Henrion","Marc Henrion"),
+  Edits=c("Mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
+)
+
+dfHist %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+```
 
 
 # Protocol summary
@@ -331,6 +351,12 @@ sensSpecMatW4ss<-data.frame(
 )
 rownames(sensSpecMatW4ss)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
 
+sensSpecMatSsm<-data.frame(
+  sens=rnorm(n=7,mean=0.70,sd=0.02),
+  spec=rnorm(n=7,mean=0.95,sd=0.01)
+)
+rownames(sensSpecMatSsm)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+
 sensSpecMatCrp<-data.frame(
   sens=rnorm(n=7,mean=0.9,sd=0.02),
   spec=rnorm(n=7,mean=0.95,sd=0.01)
@@ -373,20 +399,36 @@ dfSim<-data.frame(
   reference=c(rbinom(n=1000,size=1,prob=0.09),rbinom(n=1000,size=1,prob=0.08),rbinom(n=800,size=1,prob=0.05),rbinom(n=500,size=1,prob=0.04),rbinom(n=700,size=1,prob=0.20),rbinom(n=700,size=1,prob=0.20),rbinom(n=1000,size=1,prob=0.08),rbinom(n=1000,size=1,prob=0.12),rbinom(n=700,size=1,prob=0.09),rbinom(n=700,size=1,prob=0.20),rbinom(n=1000,size=1,prob=0.05),rbinom(n=1000,size=1,prob=0.03),rbinom(n=1000,size=1,prob=0.05),rbinom(n=500,size=1,prob=0.15),rbinom(n=500,size=1,prob=0.27),rbinom(n=1000,size=1,prob=0.02),rbinom(n=1500,size=1,prob=0.01),rbinom(n=500,size=1,prob=0.001),rbinom(n=1200,size=1,prob=0.08))
   ) %>%
   dplyr::mutate(
+    age=rpois(n=n(),lambda=28),
+    sex=sample(size=n(),c("Female","Male"),prob=c(0.5,0.5),replace=TRUE),
     hiv=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatHiv[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatHiv[country,"sens"])),
     w4ss=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatW4ss[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatW4ss[country,"sens"])),
+    ssm=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatSsm[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatSsm[country,"sens"])),
     crp=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatCrp[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatCrp[country,"sens"])),
     lam=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatLam[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatLam[country,"sens"])),
     poolxpert=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatPoolxpert[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatPoolxpert[country,"sens"])),
     cxr=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatCxr[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatCxr[country,"sens"])),
     xpert=case_when(reference==0~rbinom(n=n(),size=1,prob=1-sensSpecMatXpert[country,"spec"]),reference==1~rbinom(n=n(),size=1,prob=sensSpecMatXpert[country,"sens"]))
-)
+) %>%
+  dplyr::mutate(
+    ageCentered=age-20,
+  )
+
+dfAge<-rcs(dfSim$ageCentered,parms=5)
+colnames(dfAge)<-paste(sep="","ageSpline",1:4)
+ageKnots<-attributes(dfAge)$parms
+
+dfSim<-dfSim %>%
+  dplyr::mutate(
+    ageSpline1=as.vector(dfAge[,1]),
+    ageSpline2=as.vector(dfAge[,2]),
+    ageSpline3=as.vector(dfAge[,3]),
+    ageSpline4=as.vector(dfAge[,4]),
+  )
 
 dfSim[sample(size=10,replace=F,x=1:nrow(dfSim)),] %>%
   kable(row.names=FALSE) %>%
   kable_styling(full_width=FALSE)
-
-
 
 write.csv(dfSim,file=paste(sep="","simData_S4A_",gsub(Sys.Date(),pattern="-",replacement=""),".csv"),row.names=F)
 ```
@@ -429,6 +471,8 @@ As all samples for the test diagnostics get taken at the only study visit, we ex
 
 The R environment for statistical computing (v4.5.0 or later) will be used for all analyses.
 
+The Bayesian models are implemented in JAGS, v4.3.2.
+
 All analysis code will be made publicly available under an MIT or GNU GPL v3.0 license on GitHub.
 
 
@@ -462,7 +506,7 @@ Start 4 All populations use a mix of passive case finding (PCF), intensified cas
 
 The modelling approach detailed below will be applied to each of the populations and settings for Start 4 All. What will differ however are the specific algorithms being evaluated for PCF/ICF on the one hand and ACF on the other (see further below for the list of algorithms evaluated).
 
-### Threshold for diagnostic tests: CRP and CXR-CAD
+### Thresholds for diagnostic tests: CRP and CXR-CAD {#sec-thresholds}
 
 We will use the following thresholds to define positive/negative status for the following assays:
 
@@ -478,6 +522,11 @@ We will use the following thresholds to define positive/negative status for the 
 
   + PCF/ICF: positive if CAD (Qure-ai) score $\geq 0.5$, negative otherwise,
   + ACF: positive if CAD (Qure.ai) score $\geq 0.3$, negative otherwise.
+
+These are the threshold we will use for the primary analysis. For secondary analyses, we will use:
+
+* Quantitative CRP with threshold $\geq 10\, mg/L$,
+* CXR-CAD AI score with thresholds $\geq 0.3$ (in PCF/ICF) and $\geq 0.5$ (in ACF).
 
 Note that for the primary analysis we will only use quantitative CRP, but sensitivity analyses will use semi-quantitative CRP and a hybrid of quantitative and semi-quantitative CRP (positive if either is positive).
 
@@ -541,6 +590,8 @@ We will distinguish between lowest level of care and district-level settings, bu
 We will distinguish between W4SS positive, CAD-CXR positive and a hybrid approach (either of W4SS, CAD-CXR positive) entry into the study. Conditional on the first step, the algorithms evaluated differ slightly depending on whether or not the first step involved CXR-CAD.
 
 ##### ACF - W4SS entry
+
+To note that these are the exact same algorithms as for PCF/ICF (both have W4SS entry into the study).
 
 1. `Xpert Ultra with pooling`
 2. `Xpert Ultra`
@@ -614,6 +665,9 @@ The data we will collect is expected to be incomplete - some individuals will ha
 For these reasons, we will use a hybrid approach, using both the closed form result from above as well as Markov Chain Monte Carlo (MCMC) estimation and modelling directly the individual test results for each test for each participant from each country and setting in the study.
 
 To note that, when we use MCMC, only a relatively small subset of probability parameters (TB prevalence, sensitivities and specificities of individual tests) will generate all of the data, and we can, in theory, derive any and all conditional probability parameters (e.g. P(positive LAM | positive CAD-CXR)) directly from this small subset. However this requires some assumptions, specifically that conditional on TB status, the different tests are independent. For Xpert and pooled Xpert, which use the same technology, this can easily be seen not to be true and so we will still derive all conditional parameters individually, but using the MCMC process to impute the missing data while incorporating the uncertainty of these imputations into our estimations.
+
+All Bayesian models will be implemented in JAGS, we will run 4 chains, with each chain run for 3,000 adaptive iterations, 1,000 burn-in iterations and 12,000 iterations that are retained for statistical inference. Depending on MCMC diagnostics for mixing and non-convergence, we may run more chains for longer if needed.
+(Note that the mock-ups in this SAP, for convenience, used only 4 chains, 1,000 adaptive iterations, 500 burn-in iterations and 2,000 iterations for inference.)
 
 #### Per-country analysis
 
@@ -777,59 +831,71 @@ For every Bayesian model fitted, we will check for signs of non-convergence of t
 * Compute posterior predictive checks to assess the goodness of fit of the model.
 
 
-## Secondary objectives analyses
+## Secondary analyses
 
 These will include:
+
+* Repeating the main analysis but with alternative threshold for quantitative CRP and CXR-CAD AI score (see @sec-thresholds).
 
 * Using a composite reference standard of culture and molecular testing.
 
 * Modelling performance as a function of TB prevalence.
 
 
+## Sensitivity analyses
+
+We will explore (see @sec-thresholds) using semi-quantitative CRP instead of quantitative CRP as well as a hybrid of quantitative and semi-quantitative CRP.
+
+
 ## Mock results
 
-This version of the SAP does not include mock-ups as they need to be re-done completely given the change in algorithms being evaluated. While the analysis plan itself is complete, mock-ups will only be included in the next version.
-
-<!--
+This version of the SAP includes some mock-ups but not yet all mock-ups as they needed to be re-done completely given the change in algorithms being evaluated. While the analysis plan itself is complete, full mock-ups will only be included in a future version.
 
 ```{r primAnalBayes}
 #| message: false
 #| warning: false
-#| echo: false
-#| eval: false
 
-testList<-c("ssm","crp","cxr","lam","poolxpert","xpert")
-parsListPcfIcf<-read.csv(header=F,"../../output/20241101/pcfIcfColnames.txt")[,1]
-parsListAcf<-read.csv(header=F,"../../output/20241101/acfColnames.txt")[,1]
+parsVectW4ss<-as.vector(unlist(read.csv(header=F,"../../output/20250526/parameters_forRscript_w4ss.txt")[1,]))
+parsVectCxr<-as.vector(unlist(read.csv(header=F,"../../output/20250526/parameters_forRscript_cxr.txt")[1,]))
 
-jagsFilePcfIcf<-"../../scripts/S4A_jagsPerformanceModel_pcficf_20250210_clean_withDYTDYD.jags"
-jagsFileAcf<-"../../scripts/S4A_jagsPerformanceModel_acf_20241111_clean.withDYTDYD.jags"
+parsListW4ss.ab<-character(0)
+for(par in parsVectW4ss){
+  if(par=="ptb"){
+    parsListW4ss.ab<-c(parsListW4ss.ab,"ptb.a","ptb.b")
+  }else{
+    tmp<-unlist(strsplit(split="\\.",par))
+    parsListW4ss.ab<-c(parsListW4ss.ab,paste(sep=".",tmp[1],"a",paste(collapse=".",tmp[-1])),paste(sep=".",tmp[1],"b",paste(collapse=".",tmp[-1])))
+  }
+}
+
+parsListCxr.ab<-character(0)
+for(par in parsVectCxr){
+  if(par=="ptb"){
+    parsListCxr.ab<-c(parsListCxr.ab,"ptb.a","ptb.b")
+  }else{
+    tmp<-unlist(strsplit(split="\\.",par))
+    parsListCxr.ab<-c(parsListCxr.ab,paste(sep=".",tmp[1],"a",paste(collapse=".",tmp[-1])),paste(sep=".",tmp[1],"b",paste(collapse=".",tmp[-1])))
+  }
+}
+
+jagsFileW4ss<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_20250526_clean.jags"
+jagsFileW4ssNoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_20250526_clean.noHIVstatus.jags"
+jagsFileCxr<-"../../scripts/S4A_jagsPerformanceModel_entryCXR_20250526_clean.jags"
+jagsFileCxr.NoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryCXR_20250526_clean.noHIVstatus.jags"
+jagsFileW4ssPooled<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_pooledFacility_20250526_clean.jags"
+jagsFileW4ssPooled.NoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_pooledFacility_20250526_clean.noHIVstatus.jags"
 
 nChains<-4
-nAdapt<-3000
-nBurn<-1000
-nIter<-12000
+nAdapt<-1000 # 3000 in full analysis
+nBurn<-500 # 1000 in full analysis
+nIter<-2000 # 12000 in full analysis
 
 # define the parameters to extract from the MCMC run
-gr<-expand.grid(c("pse","psp","ppv","npv","dyd","dyt","posProp","lrm","lrp"),c("w4ss","crp","cxr","lam","poolxpert","xpert","ssm"))
-parsVectPrim<-apply(MARGIN=1,FUN=paste,gr,collapse=".")
+parsVectW4ssNoLR<-parsVectW4ss
+parsVectW4ss<-c(parsVectW4ss,gsub(pattern="pse",replacement="lrp",grep(value=TRUE,pattern="pse",parsVectW4ss)),gsub(pattern="pse",replacement="lrm",grep(value=TRUE,pattern="pse",parsVectW4ss)))
 
-parsVect1<-c('ptb',parsVectPrim,'posProp.cxr_crp','ppv.cxr_crp','npv.cxr_crp','posProp.cxr_crp_poolxpert','ppv.cxr_crp_poolxpert','npv.cxr_crp_poolxpert','posProp.cxr_crp_poolxpert_xpert','ppv.cxr_crp_poolxpert_xpert','npv.cxr_crp_poolxpert_xpert','posProp.cxr_crp_xpert','ppv.cxr_crp_xpert','npv.cxr_crp_xpert','posProp.cxr_crp_lam','ppv.cxr_crp_lam','npv.cxr_crp_lam','posProp.cxr_lam','ppv.cxr_lam','npv.cxr_lam','posProp.cxr_lam_poolxpert','ppv.cxr_lam_poolxpert','npv.cxr_lam_poolxpert','posProp.cxr_lam_poolxpert_xpert','ppv.cxr_lam_poolxpert_xpert','npv.cxr_lam_poolxpert_xpert','posProp.cxr_lam_xpert','ppv.cxr_lam_xpert','npv.cxr_lam_xpert','posProp.cxr_crplam','ppv.cxr_crplam','npv.cxr_crplam','posProp.cxr_crplam_poolxpert','ppv.cxr_crplam_poolxpert','npv.cxr_crplam_poolxpert','posProp.cxr_crplam_poolxpert_xpert','ppv.cxr_crplam_poolxpert_xpert','npv.cxr_crplam_poolxpert_xpert','posProp.cxr_crplam_xpert','ppv.cxr_crplam_xpert','npv.cxr_crplam_xpert','posProp.cxr_poolxpert','ppv.cxr_poolxpert','npv.cxr_poolxpert','posProp.cxr_poolxpert_xpert','ppv.cxr_poolxpert_xpert','npv.cxr_poolxpert_xpert','posProp.cxr_xpert','ppv.cxr_xpert','npv.cxr_xpert','posProp.crp_poolxpert','ppv.crp_poolxpert','npv.crp_poolxpert','posProp.crp_poolxpert_xpert','ppv.crp_poolxpert_xpert','npv.crp_poolxpert_xpert','posProp.crp_xpert','ppv.crp_xpert','npv.crp_xpert','posProp.crp_lam','ppv.crp_lam','npv.crp_lam','posProp.lam_poolxpert','ppv.lam_poolxpert','npv.lam_poolxpert','posProp.lam_poolxpert_xpert','ppv.lam_poolxpert_xpert','npv.lam_poolxpert_xpert','posProp.lam_xpert','ppv.lam_xpert','npv.lam_xpert','posProp.cxrcrp','ppv.cxrcrp','npv.cxrcrp','posProp.cxrcrp_poolxpert','ppv.cxrcrp_poolxpert','npv.cxrcrp_poolxpert','posProp.cxrcrp_poolxpert_xpert','ppv.cxrcrp_poolxpert_xpert','npv.cxrcrp_poolxpert_xpert','posProp.cxrcrp_xpert','ppv.cxrcrp_xpert','npv.cxrcrp_xpert','posProp.cxrcrp_lam','ppv.cxrcrp_lam','npv.cxrcrp_lam','posProp.cxrlam','ppv.cxrlam','npv.cxrlam','posProp.cxrlam_poolxpert','ppv.cxrlam_poolxpert','npv.cxrlam_poolxpert','posProp.cxrlam_poolxpert_xpert','ppv.cxrlam_poolxpert_xpert','npv.cxrlam_poolxpert_xpert','posProp.cxrlam_xpert','ppv.cxrlam_xpert','npv.cxrlam_xpert','posProp.crplam','ppv.crplam','npv.crplam','posProp.crplam_poolxpert','ppv.crplam_poolxpert','npv.crplam_poolxpert','posProp.crplam_poolxpert_xpert','ppv.crplam_poolxpert_xpert','npv.crplam_poolxpert_xpert','posProp.crplam_xpert','ppv.crplam_xpert','npv.crplam_xpert','posProp.cxrcrplam','ppv.cxrcrplam','npv.cxrcrplam','posProp.cxrcrplam_poolxpert','ppv.cxrcrplam_poolxpert','npv.cxrcrplam_poolxpert','posProp.cxrcrplam_poolxpert_xpert','ppv.cxrcrplam_poolxpert_xpert','npv.cxrcrplam_poolxpert_xpert','posProp.cxrcrplam_xpert','ppv.cxrcrplam_xpert','npv.cxrcrplam_xpert','posProp.poolxpert_xpert','ppv.poolxpert_xpert','npv.poolxpert_xpert')
-parsVect2<-c('pse.cxrlam','psp.cxrlam','lrp.cxrlam','lrm.cxrlam','dyd.cxrlam','dyt.cxrlam','pse.crplam','psp.crplam','lrp.crplam','lrm.crplam','dyd.crplam','dyt.crplam','pse.cxrcrplam','psp.cxrcrplam','lrp.cxrcrplam','lrm.cxrcrplam','dyd.cxrcrplam','dyt.cxrcrplam','pse.cxr.xpert','psp.cxr.xpert','ppv.cxr.xpert','npv.cxr.xpert','lrp.cxr.xpert','lrm.cxr.xpert','dyd.cxr.xpert','dyt.cxr.xpert','pse.cxr.lam','psp.cxr.lam','ppv.cxr.lam','npv.cxr.lam','lrp.cxr.lam','lrm.cxr.lam','dyd.cxr.lam','dyt.cxr.lam','pse.crp.xpert','psp.crp.xpert','ppv.crp.xpert','npv.crp.xpert','lrp.crp.xpert','lrm.crp.xpert','dyd.crp.xpert','dyt.crp.xpert','pse.crp.lam','psp.crp.lam','ppv.crp.lam','npv.crp.lam','lrp.crp.lam','lrm.crp.lam','dyd.crp.lam','dyt.crp.lam','pse.lam.xpert','psp.lam.xpert','ppv.lam.xpert','npv.lam.xpert','lrp.lam.xpert','lrm.lam.xpert','dyd.lam.xpert','dyt.lam.xpert','pse.poolxpert.xpert','psp.poolxpert.xpert','ppv.poolxpert.xpert','npv.poolxpert.xpert','lrp.poolxpert.xpert','lrm.poolxpert.xpert','dyd.poolxpert.xpert','dyt.poolxpert.xpert','pse.cxrcrp.xpert','psp.cxrcrp.xpert','ppv.cxrcrp.xpert','npv.cxrcrp.xpert','lrp.cxrcrp.xpert','lrm.cxrcrp.xpert','dyd.cxrcrp.xpert','dyt.cxrcrp.xpert','pse.cxrcrp.lam','psp.cxrcrp.lam','ppv.cxrcrp.lam','npv.cxrcrp.lam','lrp.cxrcrp.lam','lrm.cxrcrp.lam','dyd.cxrcrp.lam','dyt.cxrcrp.lam','pse.cxrlam.xpert','psp.cxrlam.xpert','ppv.cxrlam.xpert','npv.cxrlam.xpert','lrp.cxrlam.xpert','lrm.cxrlam.xpert','dyd.cxrlam.xpert','dyt.cxrlam.xpert','pse.crplam.xpert','psp.crplam.xpert','ppv.crplam.xpert','npv.crplam.xpert','lrp.crplam.xpert','lrm.crplam.xpert','dyd.crplam.xpert','dyt.crplam.xpert','pse.cxrcrplam.xpert','psp.cxrcrplam.xpert','ppv.cxrcrplam.xpert','npv.cxrcrplam.xpert','lrp.cxrcrplam.xpert','lrm.cxrcrplam.xpert','dyd.cxrcrplam.xpert','dyt.cxrcrplam.xpert')
-parsVect3<-c('pse.cxr.crp.xpert','psp.cxr.crp.xpert','ppv.cxr.crp.xpert','npv.cxr.crp.xpert','lrp.cxr.crp.xpert','lrm.cxr.crp.xpert','dyd.cxr.crp.xpert','dyt.cxr.crp.xpert','pse.cxr.crp.lam','psp.cxr.crp.lam','ppv.cxr.crp.lam','npv.cxr.crp.lam','lrp.cxr.crp.lam','lrm.cxr.crp.lam','dyd.cxr.crp.lam','dyt.cxr.crp.lam','pse.cxr.lam.xpert','psp.cxr.lam.xpert','ppv.cxr.lam.xpert','npv.cxr.lam.xpert','lrm.cxr.lam.xpert','lrp.cxr.lam.xpert','dyd.cxr.lam.xpert','dyt.cxr.lam.xpert','pse.cxr.poolxpert.xpert','psp.cxr.poolxpert.xpert','ppv.cxr.poolxpert.xpert','npv.cxr.poolxpert.xpert','lrp.cxr.poolxpert.xpert','lrm.cxr.poolxpert.xpert','dyd.cxr.poolxpert.xpert','dyt.cxr.poolxpert.xpert','pse.crp.poolxpert.xpert','psp.crp.poolxpert.xpert','ppv.crp.poolxpert.xpert','npv.crp.poolxpert.xpert','lrp.crp.poolxpert.xpert','lrm.crp.poolxpert.xpert','dyd.crp.poolxpert.xpert','dyt.crp.poolxpert.xpert','pse.lam.poolxpert.xpert','psp.lam.poolxpert.xpert','ppv.lam.poolxpert.xpert','npv.lam.poolxpert.xpert','lrp.lam.poolxpert.xpert','lrm.lam.poolxpert.xpert','dyd.lam.poolxpert.xpert','dyt.lam.poolxpert.xpert','pse.cxr.crplam.xpert','psp.cxr.crplam.xpert','ppv.cxr.crplam.xpert','npv.cxr.crplam.xpert','lrp.cxr.crplam.xpert','lrm.cxr.crplam.xpert','dyd.cxr.crplam.xpert','dyt.cxr.crplam.xpert','pse.cxr.crplam','psp.cxr.crplam','ppv.cxr.crplam','npv.cxr.crplam','lrp.cxr.crplam','lrm.cxr.crplam','dyd.cxr.crplam','dyt.cxr.crplam','pse.cxrcrp.poolxpert.xpert','psp.cxrcrp.poolxpert.xpert','ppv.cxrcrp.poolxpert.xpert','npv.cxrcrp.poolxpert.xpert','lrp.cxrcrp.poolxpert.xpert','lrm.cxrcrp.poolxpert.xpert','dyd.cxrcrp.poolxpert.xpert','dyt.cxrcrp.poolxpert.xpert','pse.cxrlam.poolxpert.xpert','psp.cxrlam.poolxpert.xpert','ppv.cxrlam.poolxpert.xpert','npv.cxrlam.poolxpert.xpert','lrp.cxrlam.poolxpert.xpert','lrm.cxrlam.poolxpert.xpert','dyd.cxrlam.poolxpert.xpert','dyt.cxrlam.poolxpert.xpert','pse.crplam.poolxpert.xpert','psp.crplam.poolxpert.xpert','ppv.crplam.poolxpert.xpert','npv.crplam.poolxpert.xpert','lrp.crplam.poolxpert.xpert','lrm.crplam.poolxpert.xpert','dyd.crplam.poolxpert.xpert','dyt.crplam.poolxpert.xpert','pse.cxrcrplam.poolxpert.xpert','psp.cxrcrplam.poolxpert.xpert','ppv.cxrcrplam.poolxpert.xpert','npv.cxrcrplam.poolxpert.xpert','lrp.cxrcrplam.poolxpert.xpert','lrm.cxrcrplam.poolxpert.xpert','dyd.cxrcrplam.poolxpert.xpert','dyt.cxrcrplam.poolxpert.xpert','pse.cxr.crp.poolxpert.xpert','psp.cxr.crp.poolxpert.xpert','ppv.cxr.crp.poolxpert.xpert','npv.cxr.crp.poolxpert.xpert','lrp.cxr.crp.poolxpert.xpert','lrm.cxr.crp.poolxpert.xpert','dyd.cxr.crp.poolxpert.xpert','dyt.cxr.crp.poolxpert.xpert','pse.cxr.lam.poolxpert.xpert','psp.cxr.lam.poolxpert.xpert','ppv.cxr.lam.poolxpert.xpert','npv.cxr.lam.poolxpert.xpert','lrp.cxr.lam.poolxpert.xpert','lrm.cxr.lam.poolxpert.xpert','dyd.cxr.lam.poolxpert.xpert','dyt.cxr.lam.poolxpert.xpert','pse.cxr.crplam.poolxpert.xpert','psp.cxr.crplam.poolxpert.xpert','ppv.cxr.crplam.poolxpert.xpert','npv.cxr.crplam.poolxpert.xpert','lrp.cxr.crplam.poolxpert.xpert','lrm.cxr.crplam.poolxpert.xpert','dyd.cxr.crplam.poolxpert.xpert','dyt.cxr.crplam.poolxpert.xpert')
-parsVectPcfIcf<-c(parsVect1,parsVect2,parsVect3)
-parsVectPcfIcf<-setdiff(parsVectPcfIcf,parsVectPcfIcf[grepl(parsVectPcfIcf,pattern="dyd.")])
-parsVectPcfIcfNoLR<-parsVectPcfIcf[!grepl(pattern="lrm|lrp",parsVectPcfIcf)]
-
-parsVect1<-c("ptb",parsVectPrim[!grepl(pattern="lrm|lrp",parsVectPrim)],"posProp.W4ss","ppv.W4ss","npv.W4ss","posProp.W4ss_Cxr","ppv.W4ss_Cxr","npv.W4ss_Cxr","posProp.W4ss_Cxr_Poolxpert","ppv.W4ss_Cxr_Poolxpert","npv.W4ss_Cxr_Poolxpert","posProp.W4ss_Cxr_Poolxpert_Xpert","ppv.W4ss_Cxr_Poolxpert_Xpert","npv.W4ss_Cxr_Poolxpert_Xpert","posProp.W4ss_Cxr_Xpert","ppv.W4ss_Cxr_Xpert","npv.W4ss_Cxr_Xpert","posProp.W4ss_Cxr_Lam","ppv.W4ss_Cxr_Lam","npv.W4ss_Cxr_Lam","posProp.W4ss_Crp","ppv.W4ss_Crp","npv.W4ss_Crp","posProp.W4ss_Crp_Poolxpert","ppv.W4ss_Crp_Poolxpert","npv.W4ss_Crp_Poolxpert","posProp.W4ss_Crp_Poolxpert_Xpert","ppv.W4ss_Crp_Poolxpert_Xpert","npv.W4ss_Crp_Poolxpert_Xpert","posProp.W4ss_Crp_Xpert","ppv.W4ss_Crp_Xpert","npv.W4ss_Crp_Xpert","posProp.W4ss_Crp_Lam","ppv.W4ss_Crp_Lam","npv.W4ss_Crp_Lam","posProp.W4ss_Lam","ppv.W4ss_Lam","npv.W4ss_Lam","posProp.W4ss_Lam_Poolxpert","ppv.W4ss_Lam_Poolxpert","npv.W4ss_Lam_Poolxpert","posProp.W4ss_Lam_Poolxpert_Xpert","ppv.W4ss_Lam_Poolxpert_Xpert","npv.W4ss_Lam_Poolxpert_Xpert","posProp.W4ss_Lam_Xpert","ppv.W4ss_Lam_Xpert","npv.W4ss_Lam_Xpert","posProp.W4ss_CxrCrp","ppv.W4ss_CxrCrp","npv.W4ss_CxrCrp","posProp.W4ss_CxrCrp_Poolxpert","ppv.W4ss_CxrCrp_Poolxpert","npv.W4ss_CxrCrp_Poolxpert","posProp.W4ss_CxrCrp_Poolxpert_Xpert","ppv.W4ss_CxrCrp_Poolxpert_Xpert","npv.W4ss_CxrCrp_Poolxpert_Xpert","posProp.W4ss_CxrCrp_Xpert","ppv.W4ss_CxrCrp_Xpert","npv.W4ss_CxrCrp_Xpert","posProp.W4ss_CxrCrp_Lam","ppv.W4ss_CxrCrp_Lam","npv.W4ss_CxrCrp_Lam","posProp.W4ss_CxrLam","ppv.W4ss_CxrLam","npv.W4ss_CxrLam","posProp.W4ss_CxrLam_Poolxpert","ppv.W4ss_CxrLam_Poolxpert","npv.W4ss_CxrLam_Poolxpert","posProp.W4ss_CxrLam_Poolxpert_Xpert","ppv.W4ss_CxrLam_Poolxpert_Xpert","npv.W4ss_CxrLam_Poolxpert_Xpert","posProp.W4ss_CxrLam_Xpert","ppv.W4ss_CxrLam_Xpert","npv.W4ss_CxrLam_Xpert","posProp.W4ss_CrpLam","ppv.W4ss_CrpLam","npv.W4ss_CrpLam","posProp.W4ss_CrpLam_Poolxpert","ppv.W4ss_CrpLam_Poolxpert","npv.W4ss_CrpLam_Poolxpert","posProp.W4ss_CrpLam_Poolxpert_Xpert","ppv.W4ss_CrpLam_Poolxpert_Xpert","npv.W4ss_CrpLam_Poolxpert_Xpert","posProp.W4ss_CrpLam_Xpert","ppv.W4ss_CrpLam_Xpert","npv.W4ss_CrpLam_Xpert","posProp.W4ss_CxrCrpLam","ppv.W4ss_CxrCrpLam","npv.W4ss_CxrCrpLam","posProp.W4ss_CxrCrpLam_Poolxpert","ppv.W4ss_CxrCrpLam_Poolxpert","npv.W4ss_CxrCrpLam_Poolxpert","posProp.W4ss_CxrCrpLam_Poolxpert_Xpert","ppv.W4ss_CxrCrpLam_Poolxpert_Xpert","npv.W4ss_CxrCrpLam_Poolxpert_Xpert","posProp.W4ss_CxrCrpLam_Xpert","ppv.W4ss_CxrCrpLam_Xpert","npv.W4ss_CxrCrpLam_Xpert","posProp.W4ss_Poolxpert","ppv.W4ss_Poolxpert","npv.W4ss_Poolxpert","posProp.W4ss_Poolxpert_Xpert","ppv.W4ss_Poolxpert_Xpert")
-parsVect2<-c("npv.W4ss_Poolxpert_Xpert","posProp.W4ss_Xpert","ppv.W4ss_Xpert","npv.W4ss_Xpert","posProp.Cxr","ppv.Cxr","npv.Cxr","posProp.Cxr_Crp","ppv.Cxr_Crp","npv.Cxr_Crp","posProp.Cxr_Crp_Poolxpert","ppv.Cxr_Crp_Poolxpert","npv.Cxr_Crp_Poolxpert","posProp.Cxr_Crp_Poolxpert_Xpert","ppv.Cxr_Crp_Poolxpert_Xpert","npv.Cxr_Crp_Poolxpert_Xpert","posProp.Cxr_Crp_Xpert","ppv.Cxr_Crp_Xpert","npv.Cxr_Crp_Xpert","posProp.Cxr_Crp_Lam","ppv.Cxr_Crp_Lam","npv.Cxr_Crp_Lam","posProp.Cxr_Lam","ppv.Cxr_Lam","npv.Cxr_Lam","posProp.Cxr_Lam_Poolxpert","ppv.Cxr_Lam_Poolxpert","npv.Cxr_Lam_Poolxpert","posProp.Cxr_Lam_Poolxpert_Xpert","ppv.Cxr_Lam_Poolxpert_Xpert","npv.Cxr_Lam_Poolxpert_Xpert","posProp.Cxr_Lam_Xpert","ppv.Cxr_Lam_Xpert","npv.Cxr_Lam_Xpert","posProp.Cxr_CrpLam","ppv.Cxr_CrpLam","npv.Cxr_CrpLam","posProp.Cxr_CrpLam_Poolxpert","ppv.Cxr_CrpLam_Poolxpert","npv.Cxr_CrpLam_Poolxpert","posProp.Cxr_CrpLam_Poolxpert_Xpert","ppv.Cxr_CrpLam_Poolxpert_Xpert","npv.Cxr_CrpLam_Poolxpert_Xpert","posProp.Cxr_CrpLam_Xpert","ppv.Cxr_CrpLam_Xpert","npv.Cxr_CrpLam_Xpert","posProp.Cxr_Poolxpert","ppv.Cxr_Poolxpert","npv.Cxr_Poolxpert","posProp.Cxr_Poolxpert_Xpert","ppv.Cxr_Poolxpert_Xpert","npv.Cxr_Poolxpert_Xpert","posProp.Cxr_Xpert","ppv.Cxr_Xpert","npv.Cxr_Xpert","posProp.W4ssCxr","ppv.W4ssCxr","npv.W4ssCxr","posProp.W4ssCxr_Crp","ppv.W4ssCxr_Crp","npv.W4ssCxr_Crp","posProp.W4ssCxr_Crp_Poolxpert","ppv.W4ssCxr_Crp_Poolxpert","npv.W4ssCxr_Crp_Poolxpert","posProp.W4ssCxr_Crp_Poolxpert_Xpert","ppv.W4ssCxr_Crp_Poolxpert_Xpert","npv.W4ssCxr_Crp_Poolxpert_Xpert","posProp.W4ssCxr_Crp_Xpert","ppv.W4ssCxr_Crp_Xpert","npv.W4ssCxr_Crp_Xpert","posProp.W4ssCxr_Crp_Lam","ppv.W4ssCxr_Crp_Lam","npv.W4ssCxr_Crp_Lam","posProp.W4ssCxr_Lam","ppv.W4ssCxr_Lam","npv.W4ssCxr_Lam","posProp.W4ssCxr_Lam_Poolxpert","ppv.W4ssCxr_Lam_Poolxpert","npv.W4ssCxr_Lam_Poolxpert","posProp.W4ssCxr_Lam_Poolxpert_Xpert","ppv.W4ssCxr_Lam_Poolxpert_Xpert","npv.W4ssCxr_Lam_Poolxpert_Xpert","posProp.W4ssCxr_Lam_Xpert","ppv.W4ssCxr_Lam_Xpert","npv.W4ssCxr_Lam_Xpert","posProp.W4ssCxr_CrpLam","ppv.W4ssCxr_CrpLam","npv.W4ssCxr_CrpLam","posProp.W4ssCxr_CrpLam_Poolxpert","ppv.W4ssCxr_CrpLam_Poolxpert","npv.W4ssCxr_CrpLam_Poolxpert","posProp.W4ssCxr_CrpLam_Poolxpert_Xpert","ppv.W4ssCxr_CrpLam_Poolxpert_Xpert","npv.W4ssCxr_CrpLam_Poolxpert_Xpert","posProp.W4ssCxr_CrpLam_Xpert","ppv.W4ssCxr_CrpLam_Xpert","npv.W4ssCxr_CrpLam_Xpert","posProp.W4ssCxr_Poolxpert","ppv.W4ssCxr_Poolxpert","npv.W4ssCxr_Poolxpert","posProp.W4ssCxr_Poolxpert_Xpert","ppv.W4ssCxr_Poolxpert_Xpert","npv.W4ssCxr_Poolxpert_Xpert","posProp.W4ssCxr_Xpert","ppv.W4ssCxr_Xpert","npv.W4ssCxr_Xpert","posProp.W4ss_Ssm","ppv.W4ss_Ssm","npv.W4ss_Ssm")
-parsVect3<-c("pse.W4ss.Cxr.Poolxpert.Xpert","psp.W4ss.Cxr.Poolxpert.Xpert","ppv.W4ss.Cxr.Poolxpert.Xpert","npv.W4ss.Cxr.Poolxpert.Xpert","dyt.W4ss.Cxr.Poolxpert.Xpert","dyd.W4ss.Cxr.Poolxpert.Xpert","pse.W4ss.Cxr.Xpert","psp.W4ss.Cxr.Xpert","ppv.W4ss.Cxr.Xpert","npv.W4ss.Cxr.Xpert","dyt.W4ss.Cxr.Xpert","dyd.W4ss.Cxr.Xpert","pse.W4ss.Cxr.Lam","psp.W4ss.Cxr.Lam","ppv.W4ss.Cxr.Lam","npv.W4ss.Cxr.Lam","dyt.W4ss.Cxr.Lam","dyd.W4ss.Cxr.Lam","pse.W4ss.Crp.Poolxpert.Xpert","psp.W4ss.Crp.Poolxpert.Xpert","ppv.W4ss.Crp.Poolxpert.Xpert","npv.W4ss.Crp.Poolxpert.Xpert","dyt.W4ss.Crp.Poolxpert.Xpert","dyd.W4ss.Crp.Poolxpert.Xpert","pse.W4ss.Crp.Xpert","psp.W4ss.Crp.Xpert","ppv.W4ss.Crp.Xpert","npv.W4ss.Crp.Xpert","dyt.W4ss.Crp.Xpert","dyd.W4ss.Crp.Xpert","pse.W4ss.Crp.Lam","psp.W4ss.Crp.Lam","ppv.W4ss.Crp.Lam","npv.W4ss.Crp.Lam","dyt.W4ss.Crp.Lam","dyd.W4ss.Crp.Lam","pse.W4ss.Lam.Poolxpert.Xpert","psp.W4ss.Lam.Poolxpert.Xpert","ppv.W4ss.Lam.Poolxpert.Xpert","npv.W4ss.Lam.Poolxpert.Xpert","dyt.W4ss.Lam.Poolxpert.Xpert","dyd.W4ss.Lam.Poolxpert.Xpert","pse.W4ss.Lam.Xpert","psp.W4ss.Lam.Xpert","ppv.W4ss.Lam.Xpert","npv.W4ss.Lam.Xpert","dyt.W4ss.Lam.Xpert","dyd.W4ss.Lam.Xpert","pse.W4ss.Lam","psp.W4ss.Lam","ppv.W4ss.Lam","npv.W4ss.Lam","dyt.W4ss.Lam","dyd.W4ss.Lam","pse.W4ss.CxrCrp.Poolxpert.Xpert","psp.W4ss.CxrCrp.Poolxpert.Xpert","ppv.W4ss.CxrCrp.Poolxpert.Xpert","npv.W4ss.CxrCrp.Poolxpert.Xpert","dyt.W4ss.CxrCrp.Poolxpert.Xpert","dyd.W4ss.CxrCrp.Poolxpert.Xpert","pse.W4ss.CxrCrp.Xpert","psp.W4ss.CxrCrp.Xpert","ppv.W4ss.CxrCrp.Xpert","npv.W4ss.CxrCrp.Xpert","dyt.W4ss.CxrCrp.Xpert","dyd.W4ss.CxrCrp.Xpert","pse.W4ss.CxrCrp.Lam","psp.W4ss.CxrCrp.Lam","ppv.W4ss.CxrCrp.Lam","npv.W4ss.CxrCrp.Lam","dyt.W4ss.CxrCrp.Lam","dyd.W4ss.CxrCrp.Lam","pse.W4ss.CxrLam.Poolxpert.Xpert","psp.W4ss.CxrLam.Poolxpert.Xpert","ppv.W4ss.CxrLam.Poolxpert.Xpert","npv.W4ss.CxrLam.Poolxpert.Xpert","dyt.W4ss.CxrLam.Poolxpert.Xpert","dyd.W4ss.CxrLam.Poolxpert.Xpert","pse.W4ss.CxrLam.Xpert","psp.W4ss.CxrLam.Xpert","ppv.W4ss.CxrLam.Xpert","npv.W4ss.CxrLam.Xpert","dyt.W4ss.CxrLam.Xpert","dyd.W4ss.CxrLam.Xpert","pse.W4ss.CxrLam","psp.W4ss.CxrLam","ppv.W4ss.CxrLam","npv.W4ss.CxrLam","dyt.W4ss.CxrLam","dyd.W4ss.CxrLam","pse.W4ss.CrpLam.Poolxpert.Xpert","psp.W4ss.CrpLam.Poolxpert.Xpert","ppv.W4ss.CrpLam.Poolxpert.Xpert","npv.W4ss.CrpLam.Poolxpert.Xpert","dyt.W4ss.CrpLam.Poolxpert.Xpert","dyd.W4ss.CrpLam.Poolxpert.Xpert","pse.W4ss.CrpLam.Xpert","psp.W4ss.CrpLam.Xpert","ppv.W4ss.CrpLam.Xpert","npv.W4ss.CrpLam.Xpert","dyt.W4ss.CrpLam.Xpert","dyd.W4ss.CrpLam.Xpert","pse.W4ss.CrpLam","psp.W4ss.CrpLam","ppv.W4ss.CrpLam","npv.W4ss.CrpLam","dyt.W4ss.CrpLam","dyd.W4ss.CrpLam","pse.W4ss.CxrCrpLam.Poolxpert.Xpert","psp.W4ss.CxrCrpLam.Poolxpert.Xpert","ppv.W4ss.CxrCrpLam.Poolxpert.Xpert","npv.W4ss.CxrCrpLam.Poolxpert.Xpert","dyt.W4ss.CxrCrpLam.Poolxpert.Xpert","dyd.W4ss.CxrCrpLam.Poolxpert.Xpert","pse.W4ss.CxrCrpLam.Xpert","psp.W4ss.CxrCrpLam.Xpert","ppv.W4ss.CxrCrpLam.Xpert","npv.W4ss.CxrCrpLam.Xpert","dyt.W4ss.CxrCrpLam.Xpert","dyd.W4ss.CxrCrpLam.Xpert","pse.W4ss.Poolxpert.Xpert","psp.W4ss.Poolxpert.Xpert","ppv.W4ss.Poolxpert.Xpert","npv.W4ss.Poolxpert.Xpert","dyt.W4ss.Poolxpert.Xpert","dyd.W4ss.Poolxpert.Xpert","pse.W4ss.Xpert","psp.W4ss.Xpert","ppv.W4ss.Xpert","npv.W4ss.Xpert","dyt.W4ss.Xpert","dyd.W4ss.Xpert","pse.Cxr.Crp.Poolxpert.Xpert","psp.Cxr.Crp.Poolxpert.Xpert")
-parsVect4<-c("ppv.Cxr.Crp.Poolxpert.Xpert","npv.Cxr.Crp.Poolxpert.Xpert","dyt.Cxr.Crp.Poolxpert.Xpert","dyd.Cxr.Crp.Poolxpert.Xpert","pse.Cxr.Crp.Xpert","psp.Cxr.Crp.Xpert","ppv.Cxr.Crp.Xpert","npv.Cxr.Crp.Xpert","dyt.Cxr.Crp.Xpert","dyd.Cxr.Crp.Xpert","pse.Cxr.Crp.Lam","psp.Cxr.Crp.Lam","ppv.Cxr.Crp.Lam","npv.Cxr.Crp.Lam","dyt.Cxr.Crp.Lam","dyd.Cxr.Crp.Lam","pse.Cxr.Lam.Poolxpert.Xpert","psp.Cxr.Lam.Poolxpert.Xpert","ppv.Cxr.Lam.Poolxpert.Xpert","npv.Cxr.Lam.Poolxpert.Xpert","dyt.Cxr.Lam.Poolxpert.Xpert","dyd.Cxr.Lam.Poolxpert.Xpert","pse.Cxr.Lam.Xpert","psp.Cxr.Lam.Xpert","ppv.Cxr.Lam.Xpert","npv.Cxr.Lam.Xpert","dyt.Cxr.Lam.Xpert","dyd.Cxr.Lam.Xpert","pse.Cxr.CrpLam.Poolxpert.Xpert","psp.Cxr.CrpLam.Poolxpert.Xpert","ppv.Cxr.CrpLam.Poolxpert.Xpert","npv.Cxr.CrpLam.Poolxpert.Xpert","dyt.Cxr.CrpLam.Poolxpert.Xpert","dyd.Cxr.CrpLam.Poolxpert.Xpert","pse.Cxr.CrpLam.Xpert","psp.Cxr.CrpLam.Xpert","ppv.Cxr.CrpLam.Xpert","npv.Cxr.CrpLam.Xpert","dyt.Cxr.CrpLam.Xpert","dyd.Cxr.CrpLam.Xpert","pse.Cxr.CrpLam","psp.Cxr.CrpLam","ppv.Cxr.CrpLam","npv.Cxr.CrpLam","dyt.Cxr.CrpLam","dyd.Cxr.CrpLam","pse.Cxr.Poolxpert.Xpert","psp.Cxr.Poolxpert.Xpert","ppv.Cxr.Poolxpert.Xpert","npv.Cxr.Poolxpert.Xpert","dyt.Cxr.Poolxpert.Xpert","dyd.Cxr.Poolxpert.Xpert","pse.Cxr.Xpert","psp.Cxr.Xpert","ppv.Cxr.Xpert","npv.Cxr.Xpert","dyt.Cxr.Xpert","dyd.Cxr.Xpert","pse.Cxr.Lam","psp.Cxr.Lam","ppv.Cxr.Lam","npv.Cxr.Lam","dyt.Cxr.Lam","dyd.Cxr.Lam","pse.W4ssCxr.Crp.Poolxpert.Xpert","psp.W4ssCxr.Crp.Poolxpert.Xpert","ppv.W4ssCxr.Crp.Poolxpert.Xpert","npv.W4ssCxr.Crp.Poolxpert.Xpert","dyt.W4ssCxr.Crp.Poolxpert.Xpert","dyd.W4ssCxr.Crp.Poolxpert.Xpert","pse.W4ssCxr.Crp.Xpert","psp.W4ssCxr.Crp.Xpert","ppv.W4ssCxr.Crp.Xpert","npv.W4ssCxr.Crp.Xpert","dyt.W4ssCxr.Crp.Xpert","dyd.W4ssCxr.Crp.Xpert","pse.W4ssCxr.Crp.Lam","psp.W4ssCxr.Crp.Lam","ppv.W4ssCxr.Crp.Lam","npv.W4ssCxr.Crp.Lam","dyt.W4ssCxr.Crp.Lam","dyd.W4ssCxr.Crp.Lam","pse.W4ssCxr.Lam.Poolxpert.Xpert","psp.W4ssCxr.Lam.Poolxpert.Xpert","ppv.W4ssCxr.Lam.Poolxpert.Xpert","npv.W4ssCxr.Lam.Poolxpert.Xpert","dyt.W4ssCxr.Lam.Poolxpert.Xpert","dyd.W4ssCxr.Lam.Poolxpert.Xpert","pse.W4ssCxr.Lam.Xpert","psp.W4ssCxr.Lam.Xpert","ppv.W4ssCxr.Lam.Xpert","npv.W4ssCxr.Lam.Xpert","dyt.W4ssCxr.Lam.Xpert","dyd.W4ssCxr.Lam.Xpert","pse.W4ssCxr.CrpLam.Poolxpert.Xpert","psp.W4ssCxr.CrpLam.Poolxpert.Xpert","ppv.W4ssCxr.CrpLam.Poolxpert.Xpert","npv.W4ssCxr.CrpLam.Poolxpert.Xpert","dyt.W4ssCxr.CrpLam.Poolxpert.Xpert","dyd.W4ssCxr.CrpLam.Poolxpert.Xpert","pse.W4ssCxr.CrpLam.Xpert","psp.W4ssCxr.CrpLam.Xpert","ppv.W4ssCxr.CrpLam.Xpert","npv.W4ssCxr.CrpLam.Xpert","dyt.W4ssCxr.CrpLam.Xpert","dyd.W4ssCxr.CrpLam.Xpert","pse.W4ssCxr.CrpLam","psp.W4ssCxr.CrpLam","ppv.W4ssCxr.CrpLam","npv.W4ssCxr.CrpLam","dyt.W4ssCxr.CrpLam","dyd.W4ssCxr.CrpLam","pse.W4ssCxr.Poolxpert.Xpert","psp.W4ssCxr.Poolxpert.Xpert","ppv.W4ssCxr.Poolxpert.Xpert","npv.W4ssCxr.Poolxpert.Xpert","dyt.W4ssCxr.Poolxpert.Xpert","dyd.W4ssCxr.Poolxpert.Xpert","pse.W4ssCxr.Xpert","psp.W4ssCxr.Xpert","ppv.W4ssCxr.Xpert","npv.W4ssCxr.Xpert","dyt.W4ssCxr.Xpert","dyd.W4ssCxr.Xpert","pse.W4ssCxr.Lam","psp.W4ssCxr.Lam","ppv.W4ssCxr.Lam","npv.W4ssCxr.Lam","dyt.W4ssCxr.Lam","dyd.W4ssCxr.Lam","pse.W4ss.Ssm","psp.W4ss.Ssm","ppv.W4ss.Ssm","npv.W4ss.Ssm","dyt.W4ss.Ssm","dyd.W4ss.Ssm")
-parsVect5<-apply(MARGIN=1,FUN=paste,collapse=".",expand.grid(c("pse","psp","ppv","npv","dyt","dyd"),c("w4ss.cxr.poolxpert.xpert","w4ss.cxr.xpert","w4ss.cxr.lam","w4ss.crp.poolxpert.xpert","w4ss.crp.xpert","w4ss.crp.lam","w4ss.lam.poolxpert.xpert","w4ss.lam.xpert","w4ss.lam","w4ss.cxrcrp.poolxpert.xpert","w4ss.cxrcrp.xpert","w4ss.cxrcrp.lam","w4ss.cxrlam.poolxpert.xpert","w4ss.cxrlam.xpert","w4ss.cxrlam","w4ss.crplam.poolxpert.xpert","w4ss.crplam.xpert","w4ss.crplam","w4ss.cxrcrplam.poolxpert.xpert","w4ss.cxrcrplam.xpert","w4ss.poolxpert.xpert","w4ss.xpert","cxr.crp.poolxpert.xpert","cxr.crp.xpert","cxr.crp.lam","cxr.lam.poolxpert.xpert","cxr.lam.xpert","cxr.crplam.poolxpert.xpert","cxr.crplam.xpert","cxr.crplam","cxr.poolxpert.xpert","cxr.xpert","cxr.lam","w4sscxr.crp.poolxpert.xpert","w4sscxr.crp.xpert","w4sscxr.crp.lam","w4sscxr.lam.poolxpert.xpert","w4sscxr.lam.xpert","w4sscxr.crplam.poolxpert.xpert","w4sscxr.crplam.xpert","w4sscxr.crplam","w4sscxr.poolxpert.xpert","w4sscxr.xpert","w4sscxr.lam","w4ss.ssm")))
-parsVectAcf<-unique(tolower(c(parsVect1,parsVect2,parsVect3,parsVect4,parsVect5)))
-parsVectAcf<-setdiff(parsVectAcf,parsVectAcf[grepl(parsVectAcf,pattern="dyd.")])
-parsVectAcf<-gsub(parsVectAcf,pattern="posprop",replacement="posProp")
-parsVectAcf<-c(parsVectAcf,gsub(pattern="pse",replacement="lrp",grep(value=TRUE,pattern="pse",parsVectAcf)),gsub(pattern="pse",replacement="lrm",grep(value=TRUE,pattern="pse",parsVectAcf)))
+parsVectCxrNoLR<-parsVectCxr
+parsVectCxr<-c(parsVectCxr,gsub(pattern="pse",replacement="lrp",grep(value=TRUE,pattern="pse",parsVectCxr)),gsub(pattern="pse",replacement="lrm",grep(value=TRUE,pattern="pse",parsVectCxr)))
 
 # helper functions to process MCMC output
 ssBetaPars<-function(abPars, probs, parData, alpha = 0.05) {
@@ -854,8 +920,8 @@ identifyBetaPars<-function(probs=c(0.025,0.25,0.5,0.75,0.975), parData, maxiter 
 }
 
 getBetaDistsFromMCMC<-function(mcmcPars,doPlot=FALSE,plotFile="s4a_mcmcPars.pdf"){
-  pars<-colnames(mcmcPars[[1]])
-  pars<-pars[!grepl(pars,pattern="lrm|lrp")]
+  parsAll<-colnames(mcmcPars[[1]])
+  pars<-parsAll[!grepl(parsAll,pattern="lrm|lrp") & !(parsAll %in% c(paste(sep="","b",0:2),paste(sep="","bs",1:4)))]
   nChains<-length(mcmcPars)
   
   g<-list()
@@ -885,12 +951,13 @@ getBetaDistsFromMCMC<-function(mcmcPars,doPlot=FALSE,plotFile="s4a_mcmcPars.pdf"
   if(doPlot){
     pdf(width=4*2,height=4*ceiling(length(pars)/2),file=plotFile)
     par(mfrow=c(ceiling(length(pars)/2),2))
-    for(par in pars){
-      xx<-seq(min(parsDf[,par]),max(parsDf[,par]),length=1e4)
-      yy<-dbeta(xx,resDf$a[resDf$par==par],resDf$b[resDf$par==par])
-      
+    for(par in parsAll){
       hist(freq=FALSE,parsDf[,par],breaks=100,xlab=par,ylab="density")
-      lines(xx,yy,lwd=2,col="steelblue")
+      if(par %in% pars){
+        xx<-seq(min(parsDf[,par]),max(parsDf[,par]),length=1e4)
+        yy<-dbeta(xx,resDf$a[resDf$par==par],resDf$b[resDf$par==par])
+        lines(xx,yy,lwd=2,col="steelblue")
+      }
     }
     dev.off()
   }
@@ -901,9 +968,8 @@ getBetaDistsFromMCMC<-function(mcmcPars,doPlot=FALSE,plotFile="s4a_mcmcPars.pdf"
 }
 
 # analysis function
-analysisFunBayesBetaPars<-function(dat,parsList,c,r,s,doPlot=FALSE,plotFile="s4a_mcmcPars.pdf",nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile,parsVect){
+analysisFunBayesBetaPars<-function(dat,c,r,s,doPlot=FALSE,plotFile="s4a_mcmcPars.pdf",nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile,parsVect){
   # dat = data frame with the data; requires columns country, region, setting, reference, hiv, w4ss, crp, lam, poolxpert, cxr, xpert
-  # parsList = vector with parameters to extract from / monitor during the MCMC sampling
   # c = country
   # r = region
   # s = setting
@@ -911,7 +977,7 @@ analysisFunBayesBetaPars<-function(dat,parsList,c,r,s,doPlot=FALSE,plotFile="s4a
   # plotFile = filename for the graph (if doPlot==TRUE)
   # nChains, nAdapt, nBurn, nIter = MCMC parameters (number of chains, adaptation iterations, burn-in iterations, MCMC iterations)
   # jagsFile = filename with path to the JAGS model file
-  # parsVect = vector of target parameters
+  # parsVect = vector with parameters to extract from / monitor during the MCMC sampling
   
   # prepare the data
   dfTmp<-dat %>%
@@ -919,17 +985,72 @@ analysisFunBayesBetaPars<-function(dat,parsList,c,r,s,doPlot=FALSE,plotFile="s4a
   
   datJags<-list(
     N=nrow(dfTmp),
+    hiv=dfTmp$hiv,
+    sexM=ifelse(dfTmp$sex=="Male",1,0),
+    ageSpline1=dfTmp$ageSpline1,
+    ageSpline2=dfTmp$ageSpline2,
+    ageSpline3=dfTmp$ageSpline3,
+    ageSpline4=dfTmp$ageSpline4,
     reference=dfTmp$reference,
-    w4ss=dfTmp$w4ss,
     crp=dfTmp$crp,
     cxr=dfTmp$cxr,
     lam=dfTmp$lam,
     poolxpert=dfTmp$poolxpert,
-    xpert=dfTmp$xpert
+    xpert=dfTmp$xpert,
+    ssm=dfTmp$ssm
   )
   
   # run the JAGS model
-  jagsModel <- jags.model(jagsFile, data=datJags, n.chains = nChains, n.adapt = nAdapt, quiet=TRUE)
+  jagsModel <- jags.model(jagsFile, data=datJags, n.chains = nChains, n.adapt = nAdapt, quiet = TRUE)
+  update(jagsModel,nBurn)
+  parsModel<-coda.samples(model=jagsModel,variable.names=parsVect,n.iter = nIter, na.rm=FALSE)
+  
+  # process the MCMC results
+  betaPars<-getBetaDistsFromMCMC(mcmcPars=parsModel,doPlot=doPlot,plotFile=plotFile)
+  
+  # return the results
+  return(list(mcmcObj=parsModel,betaPars=betaPars))
+}
+
+analysisFunBayesBetaParsPool<-function(dat,set,doPlot=FALSE,plotFile="s4a_mcmcPars_pool.pdf",nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile,parsVect){
+  # dat = data frame with the data; requires columns country, region, setting, reference, hiv, w4ss, crp, lam, poolxpert, cxr, xpert
+  # set = PHC or District
+  # doPlot = (logical) idnicatees whether or not to plot the MCMC trace plots and posterior distributions; defaults to FALSE
+  # plotFile = filename for the graph (if doPlot==TRUE)
+  # nChains, nAdapt, nBurn, nIter = MCMC parameters (number of chains, adaptation iterations, burn-in iterations, MCMC iterations)
+  # jagsFile = filename with path to the JAGS model file
+  # parsVect = vector with parameters to extract from / monitor during the MCMC sampling
+  
+  # prepare the data
+  dfTmp<-dat %>%
+    dplyr::filter(setting==set) %>%
+    dplyr::mutate(
+      site=as.integer(factor(
+       paste(sep="",country,region) 
+      ))
+    )
+  
+  datJags<-list(
+    N=nrow(dfTmp),
+    nsites=length(unique(dfTmp$site)),
+    site=dfTmp$site,
+    hiv=dfTmp$hiv,
+    ageSpline1=dfTmp$ageSpline1,
+    ageSpline2=dfTmp$ageSpline2,
+    ageSpline3=dfTmp$ageSpline3,
+    ageSpline4=dfTmp$ageSpline4,
+    sexM=ifelse(dfTmp$sex=="Male",1,0),
+    reference=dfTmp$reference,
+    crp=dfTmp$crp,
+    cxr=dfTmp$cxr,
+    lam=dfTmp$lam,
+    poolxpert=dfTmp$poolxpert,
+    xpert=dfTmp$xpert,
+    ssm=dfTmp$ssm
+  )
+  
+  # run the JAGS model
+  jagsModel <- jags.model(jagsFile, data=datJags, n.chains = nChains, n.adapt = nAdapt, quiet = TRUE)
   update(jagsModel,nBurn)
   parsModel<-coda.samples(model=jagsModel,variable.names=parsVect,n.iter = nIter, na.rm=FALSE)
   
@@ -967,36 +1088,221 @@ getLRpLRm<-function(mcmcObj){
   
   return(mcmcObj)
 }
+
+gr<-expand.grid(c("pse","psp","ppv","npv","dyt","posProp","lrm","lrp"),c("W4ss","Crp","Cxr","Lam","Poolxpert","Xpert","Ssm"))
+parsVectPrim<-apply(MARGIN=1,FUN=paste,gr,collapse=".")
 ```
 
--->
+### Descriptive statistics and summary statistics
+
+We will summarise the collected data in a simple table as shown on @tbl-dataSummary.
+
+```{r}
+#| label: tbl-dataSummary
+#| tbl-cap: "Summary of the study data."
+
+pTB<-mean(dfSim$reference,na.rm=T)
+pTBCI<-binom.test(n=sum(!is.na(dfSim$reference)),x=sum(dfSim$reference,na.rm=TRUE))$conf.int
+n<-nrow(dfSim)
+nMissRef<-sum(is.na(dfSim$reference))
+nMissAnyDiag<-sum(rowSums(is.na(dfSim[,c("reference","w4ss","crp","cxr","lam","xpert","poolxpert","ssm")]))>0)
+
+dfSum<-data.frame(
+  country="Any",
+  setting="Any",
+  n=n,
+  nWithReference=sum(!is.na(dfSim$reference)),
+  nTB=sum(dfSim$reference,na.rm=T),
+  pTB=paste(sep="",format(nsmall=2,round(digits=2,100*pTB)),"% (",format(nsmall=2,round(digits=2,100*pTBCI[1])),"%,",format(nsmall=2,round(digits=2,100*pTBCI[2])),"%)"),
+  missingRef=paste(sep="",nMissRef," (",format(nsmall=2,round(digits=2,100*nMissRef/n)),"%)"),
+  missingAnyDiag=paste(sep="",nMissAnyDiag," (",format(nsmall=2,round(digits=2,100*nMissAnyDiag/n)),"%)")
+)
+
+dfSumStratified<-dfSim %>%
+  dplyr::filter(country!="" & !is.na(setting)) %>%
+  dplyr::group_by(country,setting) %>%
+  dplyr::summarise(
+    n=n(),
+    nWithReference=sum(!is.na(reference)),
+    nTB=sum(reference,na.rm=TRUE),
+    pTB=ifelse(sum(!is.na(reference)>0),paste(sep="",format(nsmall=2,round(digits=2,100*mean(reference,na.rm=TRUE))),"%"," (",format(nsmall=2,round(digits=2,100*binom.test(x=sum(reference,na.rm=TRUE),n=sum(!is.na(reference)))$conf.int[1])),"%,",format(nsmall=2,round(digits=2,100*binom.test(x=sum(reference,na.rm=TRUE),n=sum(!is.na(reference)))$conf.int[2])),"%)"),NA),
+    missingRef=paste(sep="",sum(is.na(reference))," (",format(nsmall=2,round(digits=2,100*sum(is.na(reference))/n())),"%)"),
+    missingAnyDiag=paste(sep="",sum(is.na(reference+w4ss+crp+cxr+lam+xpert+poolxpert+ssm))," (",format(nsmall=2,round(digits=2,100*sum(is.na(reference+w4ss+crp+cxr+lam+xpert+poolxpert+ssm))/n())),"%)"),
+    .groups="drop"
+  ) 
+
+dfSum<-rbind(dfSum,dfSumStratified)
+
+dfSum %>%
+  kable(col.names=c("Country","Setting","n","n (with available reference)","TB cases (culture)","TB prevalence (95% CI)","Culture not available (%)","Observations with at least one diagnostic missing (%)")) %>%
+  kable_styling(full_width=FALSE)
+```
+
+We will also tabulate the performance of individual tests per country and setting for two different reference standards (culture or Xpert Ultra).
+
+```{r}
+#| label: tbl-perfSummary
+#| tbl-cap: "Summary of the performance of individual tests compared against culture and Xpert Ultra."
+
+gr<-expand.grid(c("culture","xpert"),c("All","PLWithHIV","PLWithoutHIV"),unique(paste(sep="_",dfSim$country,dfSim$region,dfSim$setting)))
+gr[,1]<-as.character(gr[,1])
+gr[,2]<-as.character(gr[,2])
+gr[,3]<-as.character(gr[,3])
+
+dfPerf<-data.frame(
+  Country=NA,
+  Region=NA,
+  Setting=NA,
+  CRS=gr[,3],
+  Reference=gr[,1],
+  Population=gr[,2],
+  Prevalence=NA,
+  cultNegXpertNeg=NA,
+  cultPosXpertNeg=NA,
+  cultNegXpertPos=NA,
+  cultPosXpertPos=NA,
+  cxr_sens=NA,
+  cxr_spec=NA,
+  crp_sens=NA,
+  crp_spec=NA,
+  lam_sens=NA,
+  lam_spec=NA,
+  ssm_sens=NA,
+  ssm_spec=NA,
+  poolxpert_sens=NA,
+  poolxpert_spec=NA,
+  xpert_sens=NA,
+  xpert_spec=NA
+)
+
+for(j in 1:nrow(dfPerf)){
+  dfPerf$Country[j]<-unlist(strsplit(split="_",dfPerf$CRS[j]))[1]
+  dfPerf$Region[j]<-unlist(strsplit(split="_",dfPerf$CRS[j]))[2]
+  dfPerf$Setting[j]<-unlist(strsplit(split="_",dfPerf$CRS[j]))[3]
+  
+  dfTmp<-dfSim %>%
+    dplyr::filter(country==dfPerf$Country[j] & region==dfPerf$Region[j] & setting==dfPerf$Setting[j])
+  
+  if(dfPerf$Population[j]=="PLWithHIV"){
+    dfTmp<-dfTmp %>%
+      dplyr::filter(!is.na(hiv) & hiv==1)
+  }else if(dfPerf$Population[j]=="PLWithoutHIV"){
+    dfTmp<-dfTmp %>%
+      dplyr::filter(!is.na(hiv) & hiv==0)
+  }
+  
+  if(dfPerf$Reference[j]=="culture"){refTmp<-dfTmp$reference}else{refTmp<-dfTmp$xpert}
+  
+  k<-sum(na.rm=TRUE,refTmp)
+  n<-sum(!is.na(refTmp))
+  
+  dfPerf$Prevalence[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*k/n)),"% (",k,"/",n,")")
+  
+  dfPerf$cultNegXpertNeg[j]<-sum(!is.na(dfTmp$reference) & !is.na(dfTmp$xpert) & dfTmp$reference==0 & dfTmp$xpert==0)
+  dfPerf$cultPosXpertNeg[j]<-sum(!is.na(dfTmp$reference) & !is.na(dfTmp$xpert) & dfTmp$reference==1 & dfTmp$xpert==0)
+  dfPerf$cultNegXpertPos[j]<-sum(!is.na(dfTmp$reference) & !is.na(dfTmp$xpert) & dfTmp$reference==0 & dfTmp$xpert==1)
+  dfPerf$cultPosXpertPos[j]<-sum(!is.na(dfTmp$reference) & !is.na(dfTmp$xpert) & dfTmp$reference==1 & dfTmp$xpert==1)
+  
+  #CXR
+  tp<-sum(na.rm=TRUE,refTmp*dfTmp$cxr)
+  fp<-sum(na.rm=TRUE,(1-refTmp)*dfTmp$cxr)
+  tn<-sum(na.rm=TRUE,(1-refTmp)*(1-dfTmp$cxr))
+  fn<-sum(na.rm=TRUE,refTmp*(1-dfTmp$cxr))
+  dfPerf$cxr_sens[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tp/(tp+fn))),"% (",tp,"/",tp+fn,")")
+  dfPerf$cxr_spec[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tn/(tn+fp))),"% (",tn,"/",tn+fp,")")
+  
+  #CRP
+  tp<-sum(na.rm=TRUE,refTmp*dfTmp$crp)
+  fp<-sum(na.rm=TRUE,(1-refTmp)*dfTmp$crp)
+  tn<-sum(na.rm=TRUE,(1-refTmp)*(1-dfTmp$crp))
+  fn<-sum(na.rm=TRUE,refTmp*(1-dfTmp$crp))
+  dfPerf$crp_sens[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tp/(tp+fn))),"% (",tp,"/",tp+fn,")")
+  dfPerf$crp_spec[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tn/(tn+fp))),"% (",tn,"/",tn+fp,")")
+  
+  #LAM
+  tp<-sum(na.rm=TRUE,refTmp*dfTmp$lam)
+  fp<-sum(na.rm=TRUE,(1-refTmp)*dfTmp$lam)
+  tn<-sum(na.rm=TRUE,(1-refTmp)*(1-dfTmp$lam))
+  fn<-sum(na.rm=TRUE,refTmp*(1-dfTmp$lam))
+  dfPerf$lam_sens[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tp/(tp+fn))),"% (",tp,"/",tp+fn,")")
+  dfPerf$lam_spec[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tn/(tn+fp))),"% (",tn,"/",tn+fp,")")
+  
+  #SSM
+  tp<-sum(na.rm=TRUE,refTmp*dfTmp$ssm)
+  fp<-sum(na.rm=TRUE,(1-refTmp)*dfTmp$ssm)
+  tn<-sum(na.rm=TRUE,(1-refTmp)*(1-dfTmp$ssm))
+  fn<-sum(na.rm=TRUE,refTmp*(1-dfTmp$ssm))
+  dfPerf$ssm_sens[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tp/(tp+fn))),"% (",tp,"/",tp+fn,")")
+  dfPerf$ssm_spec[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tn/(tn+fp))),"% (",tn,"/",tn+fp,")")
+  
+  #XPERT POOLED
+  tp<-sum(na.rm=TRUE,refTmp*dfTmp$poolxpert)
+  fp<-sum(na.rm=TRUE,(1-refTmp)*dfTmp$poolxpert)
+  tn<-sum(na.rm=TRUE,(1-refTmp)*(1-dfTmp$poolxpert))
+  fn<-sum(na.rm=TRUE,refTmp*(1-dfTmp$poolxpert))
+  dfPerf$poolxpert_sens[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tp/(tp+fn))),"% (",tp,"/",tp+fn,")")
+  dfPerf$poolxpert_spec[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tn/(tn+fp))),"% (",tn,"/",tn+fp,")")
+  
+  #XPERT SINGLE
+  tp<-sum(na.rm=TRUE,refTmp*dfTmp$xpert)
+  fp<-sum(na.rm=TRUE,(1-refTmp)*dfTmp$xpert)
+  tn<-sum(na.rm=TRUE,(1-refTmp)*(1-dfTmp$xpert))
+  fn<-sum(na.rm=TRUE,refTmp*(1-dfTmp$xpert))
+  dfPerf$xpert_sens[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tp/(tp+fn))),"% (",tp,"/",tp+fn,")")
+  dfPerf$xpert_spec[j]<-paste(sep="",format(nsmall=1,round(digits=1,100*tn/(tn+fp))),"% (",tn,"/",tn+fp,")")
+  
+  rm(list=c("dfTmp","tp","tn","fp","fn"))
+}
+
+dfPerf$CRS<-gsub(dfPerf$CRS,pattern="_+",replacement=" ")
+
+dfPerf<-dfPerf[!grepl(pattern="NaN",dfPerf$Prevalence),]
+dfPerf<-dfPerf[dfPerf$cultNegXpertNeg+dfPerf$cultPosXpertNeg+dfPerf$cultNegXpertPos+dfPerf$cultPosXpertPos>=5,]
+
+for(i in 1:nrow(dfPerf)){
+  for(j in 1:ncol(dfPerf)){
+    if(grepl(pattern="NaN",dfPerf[i,j])){dfPerf[i,j]<-NA}
+  }
+}
+
+dfPerf %>%
+  dplyr::select(!c(Country,Region,Setting,CRS)) %>%
+  kable(row.names = FALSE,col.names=c("Reference","Population","TB prevalence","-/-","+/-","-/+","+/+",rep(c("sensitivity","specifity"),6))) %>%
+  add_header_above(c(" "=1," "=1," "=1,"Culture/Xpert"=4,"CXR"=2,"CRP"=2,"LAM"=2,"SSM"=2,"Pooled Xpert"=2,"Xpert Ultra"=2)) %>%
+  kableExtra::group_rows(index=table(fct_inorder(dfPerf$CRS))) %>%
+  kable_styling(full_width=FALSE)
+```
+
 
 #### PCF / ICF lowest level of care
-
-<!--
 
 ```{r analysis}
 #| eval: false
 
 # prepare output data frame
 dfResPrimBayes<-data.frame(
-  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Vietnam",3),rep("Malawi",1)),
-  region=c(rep("",4+4+2+3),"Aracaju","Maceio",rep("",3+1)),
-  setting=c("PHC","District","Informal settlements ACF","Children","PHC","District","Nomads","IDP / refugees","PHC","District","PHC","District","Informal settlements ACF","PHC","PHC","PHC","Informal settlements ACF","Children","PHC")
+  country=c(rep("Cameroon",6),rep("Nigeria",8),rep("Kenya",2),rep("Bangladesh",5),rep("Brazil",2),rep("Viet Nam",5),rep("Malawi",1),"Pooled","Pooled"),
+  region=c(rep("",6),c(rep("ZRC",2),rep("JHF",6)),rep("",2+5),"Aracaju","Maceio",rep("",5+1),rep("",2)),
+  setting=c("PHC","District",rep("Nomads",3),"Children","PHC","District",rep("Nomads",3),rep("IDP / refugees",3),"PHC","District","PHC","District",rep("Informal settlements",3),"PHC","PHC","District",rep("Informal settlements",3),"Children","PHC","PHC","District"),
+  entryToStudy=c(rep("W4SS",2),"W4SS","CXR","W4SS | CXR","",rep("W4SS",2),"W4SS","CXR","W4SS | CXR","W4SS","CXR","W4SS | CXR",rep("W4SS",2),rep("W4SS",2),"W4SS","CXR","W4SS | CXR",rep("W4SS",2),"W4SS","W4SS","CXR","W4SS | CXR","","W4SS",rep("W4SS",2))
 ) %>%
   dplyr::filter(setting!="Children")
 
 allRes<-list()
 
 printResults<-TRUE
-checkPcfIcf<-FALSE
-checkAcf<-FALSE
-  
-for(i in 1:nrow(dfResPrimBayes)){
+checkW4ssFacility<-FALSE
+checkW4ssAcf<-FALSE
+checkW4ssCxrAcf<-FALSE
+checkCxrAcf<-FALSE
+
+outPrefix<-"mockData_AnalysisResults_"
+
+for(i in 1:(nrow(dfResPrimBayes)-2)){
   print(i)
   
-  if(dfResPrimBayes$setting[i] %in% c("PHC","District")){
-    res<-analysisFunBayesBetaPars(dat=dfSim,parsList=parsVectPcfIcf,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="","S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFilePcfIcf,parsVect=parsVectPcfIcf)
+  if(dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Pooled"){
+    res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ss,parsVect=parsVectW4ssNoLR)
     
     # derive positive and negative likelihood ratios
     res$mcmcObj<-getLRpLRm(res$mcmcObj)
@@ -1008,8 +1314,9 @@ for(i in 1:nrow(dfResPrimBayes)){
     mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
     mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
     mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
-    mcmcSumDf<-mcmcSumDf[parsVectPcfIcf,]
     mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
+    mcmcSumDf<-mcmcSumDf[parsVectW4ss,]
+
     
     # print the results
     if(printResults){
@@ -1024,30 +1331,32 @@ for(i in 1:nrow(dfResPrimBayes)){
     allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
     
     values<-numeric(0)
-    for(j in 1:length(parsListPcfIcf)){
-      parTmp<-unlist(strsplit(split="\\.",parsListPcfIcf[j]))
+    for(j in 1:length(parsVectW4ss)){
+      parTmp<-unlist(strsplit(split="\\.",parsVectW4ss[j]))
       parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
       parTmp.par<-parTmp[2]
       if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
       values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
     }
     
-  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements ACF","Nomads")){
-    res<-analysisFunBayesBetaPars(dat=dfSim,parsList=parsVectAcf,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="","S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileAcf,parsVect=parsVectAcf)
+  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS" & dfResPrimBayes$country[i]!="Pooled"){
+    res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ss,parsVect=parsVectW4ssNoLR)
     
     # derive positive and negative likelihood ratios
     res$mcmcObj<-getLRpLRm(res$mcmcObj)
     
     # format the summary
     mcmcSumDf<-MCMCsummary(res$mcmcObj)
+    parsVectAcfNoLR<-parsVectAcf
+    parsVectAcf<-unique(c(parsVectAcf,rownames(mcmcSumDf)))
     mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
     mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
     mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
     mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
     mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
-    mcmcSumDf<-mcmcSumDf[parsVectAcf,]
     mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
-    
+    mcmcSumDf<-mcmcSumDf[parsVectAcf,]
+
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
@@ -1069,39 +1378,201 @@ for(i in 1:nrow(dfResPrimBayes)){
       values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
     }
     
-  }else if(dfResPrimBayes$setting[i]=="Children"){
+  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="CXR" & dfResPrimBayes$country[i]!="Pooled"){
+    res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
+    
+    # derive positive and negative likelihood ratios
+    res$mcmcObj<-getLRpLRm(res$mcmcObj)
+    
+    # format the summary
+    mcmcSumDf<-MCMCsummary(res$mcmcObj)
+    parsVectAcfNoLR<-parsVectAcf
+    parsVectAcf<-unique(c(parsVectAcf,rownames(mcmcSumDf)))
+    mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
+    mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
+    mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
+    mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
+    mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
+    mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
+    mcmcSumDf<-mcmcSumDf[parsVectAcf,]
+
+    # print the results
+    if(printResults){
+      mcmcSumDfPrim %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable_styling(full_width=FALSE)
+    }
+    
+    # add the summary to the result object
+    res[["mcmcSummary"]]<-mcmcSumDf
+    
+    allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
+    
+    values<-numeric(0)
+    for(j in 1:length(parsListAcf)){
+      parTmp<-unlist(strsplit(split="\\.",parsListAcf[j]))
+      parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
+      parTmp.par<-parTmp[2]
+      if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
+      values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+    }
+    
+  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR" & dfResPrimBayes$country[i]!="Pooled"){
+    res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
+    
+    # derive positive and negative likelihood ratios
+    res$mcmcObj<-getLRpLRm(res$mcmcObj)
+    
+    # format the summary
+    mcmcSumDf<-MCMCsummary(res$mcmcObj)
+    parsVectAcfNoLR<-parsVectAcf
+    parsVectAcf<-unique(c(parsVectAcf,rownames(mcmcSumDf)))
+    mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
+    mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
+    mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
+    mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
+    mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
+    mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
+    mcmcSumDf<-mcmcSumDf[parsVectAcf,]
+
+    # print the results
+    if(printResults){
+      mcmcSumDfPrim %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable_styling(full_width=FALSE)
+    }
+    
+    # add the summary to the result object
+    res[["mcmcSummary"]]<-mcmcSumDf
+    
+    allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
+    
+    values<-numeric(0)
+    for(j in 1:length(parsListAcf)){
+      parTmp<-unlist(strsplit(split="\\.",parsListAcf[j]))
+      parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
+      parTmp.par<-parTmp[2]
+      if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
+      values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+    }
+    
+  }else if(dfResPrimBayes$setting[i]=="Children" & dfResPrimBayes$country[i]!="Pooled"){
     cat("Children processing not yet implemented.\n")
-    values<-rep(NA,length(parsListPcfIcf))
-  }else{
+    values<-NA
+  }else if(dfResPrimBayes$country[i]!="Pooled"){
     stop("Invalid setting parameter.")
   }
   
-  if(!checkPcfIcf & dfResPrimBayes$setting[i] %in% c("PHC","District")){
-    dfResPcfIcf<-values
-    checkPcfIcf<-TRUE
-  }else if(!checkAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements ACF","Nomads")){
-    dfResAcf<-values
-    checkAcf<-TRUE
-  }else if(checkPcfIcf & dfResPrimBayes$setting[i] %in% c("PHC","District")){
-    dfResPcfIcf<-rbind(dfResPcfIcf,values)
-  }else if(checkAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements ACF","Nomads")){
-    dfResAcf<-rbind(dfResAcf,values)
+  if(!checkW4ssFacility & dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Pooled"){
+    dfResW4ssFacility<-values
+    checkW4ssFacility<-TRUE
+  }else if(checkW4ssFacility & dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Pooled"){
+    dfResW4ssFacility<-rbind(dfResW4ssFacility,values)
+  }else if(!checkW4ssAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS"){
+    dfResW4ssAcf<-values
+    checkW4ssAcf<-TRUE
+  }else if(checkW4ssAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS"){
+    dfResW4ssAcf<-rbind(dfResW4ssAcf,values)
+  }else if(!checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
+    dfResW4ssCxrAcf<-values
+    checkW4ssCxrAcf<-TRUE
+  }else if(checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
+    dfResW4ssCxrAcf<-rbind(dfResW4ssCxrAcf,values)
+  }else if(!checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
+    dfResCxrAcf<-values
+    checkCxrAcf<-TRUE
+  }else if(checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
+    dfResCxrAcf<-rbind(dfResCxrAcf,values)
   }
-
 }
 
-dfResPcfIcf<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("PHC","District")),dfResPcfIcf)
-colnames(dfResPcfIcf)<-c(colnames(dfResPrimBayes),parsListPcfIcf)
 
-dfResAcf<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements ACF","Nomads")),dfResAcf)
-colnames(dfResAcf)<-c(colnames(dfResPrimBayes),parsListAcf)
+# Pooled PHC
+res<-analysisFunBayesBetaParsPool(dat=dfSim,set="PHC",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_PHC","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ss)
+    
+## derive positive and negative likelihood ratios
+res$mcmcObj<-getLRpLRm(res$mcmcObj)
 
-write.csv(dfResPcfIcf,row.names=F,file=paste(sep="","mockData_AnalysisResults_PCFICF_",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
-write.csv(dfResAcf,row.names=F,file=paste(sep="","mockData_AnalysisResults_ACF_",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
+## format the summary
+mcmcSumDf<-MCMCsummary(res$mcmcObj)
+mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
+mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
+mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
+mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
+mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
+mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
+mcmcSumDf<-mcmcSumDf[parsVectW4ss,]
+
+# add the summary to the result object
+res[["mcmcSummary"]]<-mcmcSumDf
+
+allRes[["Pooled__PHC"]]<-res
+
+values<-numeric(0)
+for(j in 1:length(parsVectW4ss)){
+  parTmp<-unlist(strsplit(split="\\.",parsVectW4ss[j]))
+  parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
+  parTmp.par<-parTmp[2]
+  if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
+  values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+}
+
+dfRes<-rbind(dfResW4ssFacility,values)
+
+# Pooled district
+res<-analysisFunBayesBetaParsPool(dat=dfSim,set="District",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_District","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ss)
+    
+## derive positive and negative likelihood ratios
+res$mcmcObj<-getLRpLRm(res$mcmcObj)
+
+## format the summary
+mcmcSumDf<-MCMCsummary(res$mcmcObj)
+mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
+mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
+mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
+mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
+mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
+mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
+mcmcSumDf<-mcmcSumDf[parsVectW4ss,]
+
+# add the summary to the result object
+res[["mcmcSummary"]]<-mcmcSumDf
+
+allRes[["Pooled__District"]]<-res
+
+values<-numeric(0)
+for(j in 1:length(parsVectW4ss)){
+  parTmp<-unlist(strsplit(split="\\.",parsVectW4ss[j]))
+  parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
+  parTmp.par<-parTmp[2]
+  if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
+  values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+}
+
+dfResW4ssFacility<-rbind(dfResW4ssFacility,values)
+
+if(!is.null(dim(dfResW4ssFacility))){
+  dfResW4ssFacility<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("PHC","District")),dfResW4ssFacility)
+  colnames(dfResW4ssFacility)<-c(colnames(dfResPrimBayes),parsVectW4ss)
+}else{
+  dfResW4ssFacility<-as.character(c(dfResPrimBayes %>% dplyr::filter(setting %in% c("PHC","District")),dfResW4ssFacility))
+  names(dfResW4ssFacility)<-c(colnames(dfResPrimBayes),parsVectW4ss)
+  dfResW4ssFacility<-t(as.data.frame(dfResW4ssFacility))
+}
+
+# if(!is.null(dim(dfResAcf))){
+#   dfResAcf<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads")),dfResAcf)
+#   colnames(dfResAcf)<-c(colnames(dfResPrimBayes),parsListAcf)
+# }else{
+#   dfResAcf<-as.character(c(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads")),dfResAcf))
+#   names(dfResAcf)<-c(colnames(dfResPrimBayes),parsListAcf)
+#   dfResAcf<-t(as.data.frame(dfResAcf))
+# }
+
+write.csv(dfResW4ssFacility,row.names=F,file=paste(sep="","mockData_AnalysisResults_PCFICF_",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
+#write.csv(dfResAcf,row.names=F,file=paste(sep="","mockData_AnalysisResults_ACF_",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
 save(allRes,file=paste(sep="","mockData_AnalysisResults_",gsub(pattern="-",replacement="",Sys.Date()),".RData"))
 ```
-
--->
 
 <!--
 Below in @tbl-primAnalBayesOneCountryPcf we present how we will present results for the overall PCF/ICF evaluations - taking the example of Malawi PHC.
@@ -1433,6 +1904,8 @@ None in this version of the SAP. The final version will include mock-ups of the 
 
 @tbl-abbr: List of abbreviations
 
+@tbl-versionHistory: Version history of the SAP since v1.0.
+
 @tbl-countries: Summary of study populations, countries, and procedures.
 
 @tbl-diagnostics: Summary of diagnostic assays evaluated in this study.
@@ -1442,6 +1915,11 @@ None in this version of the SAP. The final version will include mock-ups of the 
 @tbl-sampSizeTableByCountry: Sample size for each survey.
 
 @tbl-dataSim: 10 random rows from the simulated data.
+
+@tbl-dataSummary: Summary of the study data.
+
+@tbl-perfSummary: Summary of the performance of individual tests compared against culture and Xpert Ultra.
+
 
 The final version of the SAP will include mock-ups of table with the performance evaluation results.
 
