@@ -1,0 +1,183 @@
+model{
+  
+  # model
+  for(i in 1:N){
+    ## TB status of each participant
+    reference[i]~dbern(ptbInd[i])
+    sexM[i]~dbern(pmale)
+    ptbInd[i]=1/(1+exp(-ptbInd_linpred[i]))
+    ptbInd_linpred[i]=b0+b1*sexM[i]+bs1*ageSpline1[i]+bs2*ageSpline2[i]+bs3*ageSpline3[i]+bs4*ageSpline4[i]
+    
+    # test results for each participant
+    crp[i]~dbern(p_Crp[reference[i]+1])
+    cxr[i]~dbern(p_Cxr[reference[i]+1])
+    lam[i]~dbern(p_Lam[reference[i]+1])
+    poolxpert[i]~dbern(p_Poolxpert[reference[i]+1])
+    xpert[i]~dbern(p_Xpert[reference[i]+1])
+    ssm[i]~dbern(p_Ssm[reference[i]+1])
+  }
+  
+  # sensitivities and specificities (1st element is 1-specificity, 2nd is sensitivity)
+  p_Crp[1]=ilogit(z[1])
+  p_Crp[2]=ilogit(z[2])
+  p_Cxr[1]=ilogit(z[3])
+  p_Cxr[2]=ilogit(z[4])
+  p_Lam[1]=ilogit(z[5])
+  p_Lam[2]=ilogit(z[6])
+  p_Poolxpert[1]=ilogit(z[7])
+  p_Poolxpert[2]=ilogit(z[8])
+  p_Xpert[1]=ilogit(z[9])
+  p_Xpert[2]=ilogit(z[10])
+  p_Ssm[1]=ilogit(z[11])
+  p_Ssm[2]=ilogit(z[12])
+  
+  # logits of sensitivities and specificities
+  z[1:12]~dmnorm(mu[1:12], Omega[1:12, 1:12])
+  
+  # sex, TB & HIV prevalence
+  pmale~dbeta(1/3,1/3)
+  ptb=mean(ptbInd)
+  
+  # priors for mu and Omega
+  for(i in 1:12){
+    mu[i]~dnorm(0,1/10)
+  } 
+  Omega~dwish(I[1:12,1:12],13)
+  
+  for(i in 1:12){
+    for(j in 1:12){
+      I[i,j]=ifelse(i==j,1,0)
+    }
+  }
+  
+  # priors for b0, b1, b2
+  b0inv~dbeta(1/3,1/3)
+  b0=log(b0inv/(1-b0inv))
+  b1~dnorm(0,1/10)
+  bs1~dnorm(0,1/10)
+  bs2~dnorm(0,1/10)
+  bs3~dnorm(0,1/10)
+  bs4~dnorm(0,1/10)
+  
+  # derived quantities
+  pse.Crp=p_Crp[2]
+  pse.Cxr=p_Cxr[2]
+  pse.Lam=p_Lam[2]
+  pse.Poolxpert=p_Poolxpert[2]
+  pse.Xpert=p_Xpert[2]
+  pse.Ssm=p_Ssm[2]
+  
+  psp.Crp=1-p_Crp[1]
+  psp.Cxr=1-p_Cxr[1]
+  psp.Lam=1-p_Lam[1]
+  psp.Poolxpert=1-p_Poolxpert[1]
+  psp.Xpert=1-p_Xpert[1]
+  psp.Ssm=1-p_Ssm[1]
+  
+  posProp.Crp=ptb*pse.Crp+(1-ptb)*(1-psp.Crp)
+  posProp.Cxr=ptb*pse.Cxr+(1-ptb)*(1-psp.Cxr)
+  posProp.Lam=ptb*pse.Lam+(1-ptb)*(1-psp.Lam)
+  posProp.Poolxpert=ptb*pse.Poolxpert+(1-ptb)*(1-psp.Poolxpert)
+  posProp.Xpert=ptb*pse.Xpert+(1-ptb)*(1-psp.Xpert)
+  posProp.Ssm=ptb*pse.Ssm+(1-ptb)*(1-psp.Ssm)
+  
+  ppv.Crp=ptb*pse.Crp/(ptb*pse.Crp+(1-ptb)*(1-psp.Crp))
+  ppv.Cxr=ptb*pse.Cxr/(ptb*pse.Cxr+(1-ptb)*(1-psp.Cxr))
+  ppv.Lam=ptb*pse.Lam/(ptb*pse.Lam+(1-ptb)*(1-psp.Lam))
+  ppv.Poolxpert=ptb*pse.Poolxpert/(ptb*pse.Poolxpert+(1-ptb)*(1-psp.Poolxpert))
+  ppv.Xpert=ptb*pse.Xpert/(ptb*pse.Xpert+(1-ptb)*(1-psp.Xpert))
+  ppv.Ssm=ptb*pse.Ssm/(ptb*pse.Ssm+(1-ptb)*(1-psp.Ssm))
+
+  npv.Crp=(1-ptb)*psp.Crp/((1-ptb)*psp.Crp+ptb*(1-pse.Crp))
+  npv.Cxr=(1-ptb)*psp.Cxr/((1-ptb)*psp.Cxr+ptb*(1-pse.Cxr))
+  npv.Lam=(1-ptb)*psp.Lam/((1-ptb)*psp.Lam+ptb*(1-pse.Lam))
+  npv.Poolxpert=(1-ptb)*psp.Poolxpert/((1-ptb)*psp.Poolxpert+ptb*(1-pse.Poolxpert))
+  npv.Xpert=(1-ptb)*psp.Xpert/((1-ptb)*psp.Xpert+ptb*(1-pse.Xpert))
+  npv.Ssm=(1-ptb)*psp.Ssm/((1-ptb)*psp.Ssm+ptb*(1-pse.Ssm))
+  
+  dyt.Crp=posProp.Crp
+  dyt.Cxr=posProp.Cxr
+  dyt.Lam=posProp.Lam
+  dyt.Poolxpert=posProp.Poolxpert
+  dyt.Xpert=posProp.Xpert
+  dyt.Ssm=posProp.Ssm
+  
+  # conditional probability parameters
+  ppv.Crp_Poolxpert~dbeta(sum(poolxpert*crp*reference)+1/3,sum(poolxpert*crp)-sum(poolxpert*crp*reference)+1/3)
+  npv.Crp_Poolxpert~dbeta(sum((1-poolxpert)*crp*(1-reference))+1/3,sum((1-poolxpert)*crp)-sum((1-poolxpert)*crp*(1-reference))+1/3)
+  posProp.Crp_Poolxpert~dbeta(sum(poolxpert*crp)+1/3,sum(crp)-sum(poolxpert*crp)+1/3)
+
+  ppv.Lam_Poolxpert~dbeta(sum(poolxpert*lam*reference)+1/3,sum(poolxpert*lam)-sum(poolxpert*lam*reference)+1/3)
+  npv.Lam_Poolxpert~dbeta(sum((1-poolxpert)*lam*(1-reference))+1/3,sum((1-poolxpert)*lam)-sum((1-poolxpert)*lam*(1-reference))+1/3)
+  posProp.Lam_Poolxpert~dbeta(sum(poolxpert*lam)+1/3,sum(lam)-sum(poolxpert*lam)+1/3)
+
+  ppv.CrpLam_Poolxpert~dbeta(sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(poolxpert*ifelse(crp+lam>0,1,0))-sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.CrpLam_Poolxpert~dbeta(sum((1-poolxpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3,sum((1-poolxpert)*ifelse(crp+lam>0,1,0))-sum((1-poolxpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3)
+  posProp.CrpLam_Poolxpert~dbeta(sum(poolxpert*ifelse(crp+lam>0,1,0))+1/3,sum(ifelse(crp+lam>0,1,0))-sum(poolxpert*ifelse(crp+lam>0,1,0))+1/3)
+
+  ppv.Crp_Xpert~dbeta(sum(xpert*crp*reference)+1/3,sum(xpert*crp)-sum(xpert*crp*reference)+1/3)
+  npv.Crp_Xpert~dbeta(sum((1-xpert)*crp*(1-reference))+1/3,sum((1-xpert)*crp)-sum((1-xpert)*crp*(1-reference))+1/3)
+  posProp.Crp_Xpert~dbeta(sum(xpert*crp)+1/3,sum(crp)-sum(xpert*crp)+1/3)
+
+  ppv.Lam_Xpert~dbeta(sum(xpert*lam*reference)+1/3,sum(xpert*lam)-sum(xpert*lam*reference)+1/3)
+  npv.Lam_Xpert~dbeta(sum((1-xpert)*lam*(1-reference))+1/3,sum((1-xpert)*lam)-sum((1-xpert)*lam*(1-reference))+1/3)
+  posProp.Lam_Xpert~dbeta(sum(xpert*lam)+1/3,sum(lam)-sum(xpert*lam)+1/3)
+
+  ppv.CrpLam_Xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(crp+lam>0,1,0))-sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.CrpLam_Xpert~dbeta(sum((1-xpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3,sum((1-xpert)*ifelse(crp+lam>0,1,0))-sum((1-xpert)*ifelse(crp+lam>0,1,0)*(1-reference))+1/3)
+  posProp.CrpLam_Xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0))+1/3,sum(ifelse(crp+lam>0,1,0))-sum(xpert*ifelse(crp+lam>0,1,0))+1/3)
+
+  ppv.Crp_Lam~dbeta(sum(lam*crp*reference)+1/3,sum(lam*crp)-sum(lam*crp*reference)+1/3)
+  npv.Crp_Lam~dbeta(sum((1-lam)*crp*(1-reference))+1/3,sum((1-lam)*crp)-sum((1-lam)*crp*(1-reference))+1/3)
+  posProp.Crp_Lam~dbeta(sum(lam*crp)+1/3,sum(crp)-sum(lam*crp)+1/3)
+
+  # full algorithm performances
+  pse.Crp.Poolxpert~dbeta(sum(poolxpert*crp*reference)+1/3,sum(reference)-sum(poolxpert*crp*reference)+1/3)
+  psp.Crp.Poolxpert~dbeta(sum(ifelse((1-poolxpert)+(1-crp)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-poolxpert)+(1-crp)>0,1,0)*(1-reference))+1/3)
+  ppv.Crp.Poolxpert~dbeta(sum(poolxpert*crp*reference)+1/3,sum(poolxpert*crp)-sum(poolxpert*crp*reference)+1/3)
+  npv.Crp.Poolxpert~dbeta(sum(ifelse((1-poolxpert)+(1-crp)>0,1,0)*(1-reference))+1/3,sum(ifelse((1-poolxpert)+(1-crp)>0,1,0))-sum(ifelse((1-poolxpert)+(1-crp)>0,1,0)*(1-reference))+1/3)
+  dyt.Crp.Poolxpert~dbeta(sum(poolxpert*crp)+1/3,N-sum(poolxpert*crp)+1/3)
+  posProp.Crp.Poolxpert=dyt.Crp.Poolxpert
+
+  pse.Lam.Poolxpert~dbeta(sum(poolxpert*lam*reference)+1/3,sum(reference)-sum(poolxpert*lam*reference)+1/3)
+  psp.Lam.Poolxpert~dbeta(sum(ifelse((1-poolxpert)+(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-poolxpert)+(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.Lam.Poolxpert~dbeta(sum(poolxpert*lam*reference)+1/3,sum(poolxpert*lam)-sum(poolxpert*lam*reference)+1/3)
+  npv.Lam.Poolxpert~dbeta(sum(ifelse((1-poolxpert)+(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse((1-poolxpert)+(1-lam)>0,1,0))-sum(ifelse((1-poolxpert)+(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.Lam.Poolxpert~dbeta(sum(poolxpert*lam)+1/3,N-sum(poolxpert*lam)+1/3)
+  posProp.Lam.Poolxpert=dyt.Lam.Poolxpert
+
+  pse.CrpLam.Poolxpert~dbeta(sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  psp.CrpLam.Poolxpert~dbeta(sum(ifelse((1-poolxpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-poolxpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.CrpLam.Poolxpert~dbeta(sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(poolxpert*ifelse(crp+lam>0,1,0))-sum(poolxpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.CrpLam.Poolxpert~dbeta(sum(ifelse((1-poolxpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse((1-poolxpert)+(1-crp)*(1-lam)>0,1,0))-sum(ifelse((1-poolxpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.CrpLam.Poolxpert~dbeta(sum(poolxpert*ifelse(crp+lam>0,1,0))+1/3,N-sum(poolxpert*ifelse(crp+lam>0,1,0))+1/3)
+  posProp.CrpLam.Poolxpert=dyt.CrpLam.Poolxpert
+
+  pse.Crp.Xpert~dbeta(sum(xpert*crp*reference)+1/3,sum(reference)-sum(xpert*crp*reference)+1/3)
+  psp.Crp.Xpert~dbeta(sum(ifelse((1-xpert)+(1-crp)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-xpert)+(1-crp)>0,1,0)*(1-reference))+1/3)
+  ppv.Crp.Xpert~dbeta(sum(xpert*crp*reference)+1/3,sum(xpert*crp)-sum(xpert*crp*reference)+1/3)
+  npv.Crp.Xpert~dbeta(sum(ifelse((1-xpert)+(1-crp)>0,1,0)*(1-reference))+1/3,sum(ifelse((1-xpert)+(1-crp)>0,1,0))-sum(ifelse((1-xpert)+(1-crp)>0,1,0)*(1-reference))+1/3)
+  dyt.Crp.Xpert~dbeta(sum(xpert*crp)+1/3,N-sum(xpert*crp)+1/3)
+  posProp.Crp.Xpert=dyt.Crp.Xpert
+
+  pse.Lam.Xpert~dbeta(sum(xpert*lam*reference)+1/3,sum(reference)-sum(xpert*lam*reference)+1/3)
+  psp.Lam.Xpert~dbeta(sum(ifelse((1-xpert)+(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-xpert)+(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.Lam.Xpert~dbeta(sum(xpert*lam*reference)+1/3,sum(xpert*lam)-sum(xpert*lam*reference)+1/3)
+  npv.Lam.Xpert~dbeta(sum(ifelse((1-xpert)+(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse((1-xpert)+(1-lam)>0,1,0))-sum(ifelse((1-xpert)+(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.Lam.Xpert~dbeta(sum(xpert*lam)+1/3,N-sum(xpert*lam)+1/3)
+  posProp.Lam.Xpert=dyt.Lam.Xpert
+
+  pse.CrpLam.Xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(reference)-sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  psp.CrpLam.Xpert~dbeta(sum(ifelse((1-xpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-xpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  ppv.CrpLam.Xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3,sum(xpert*ifelse(crp+lam>0,1,0))-sum(xpert*ifelse(crp+lam>0,1,0)*reference)+1/3)
+  npv.CrpLam.Xpert~dbeta(sum(ifelse((1-xpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3,sum(ifelse((1-xpert)+(1-crp)*(1-lam)>0,1,0))-sum(ifelse((1-xpert)+(1-crp)*(1-lam)>0,1,0)*(1-reference))+1/3)
+  dyt.CrpLam.Xpert~dbeta(sum(xpert*ifelse(crp+lam>0,1,0))+1/3,N-sum(xpert*ifelse(crp+lam>0,1,0))+1/3)
+  posProp.CrpLam.Xpert=dyt.CrpLam.Xpert
+
+  pse.Crp.Lam~dbeta(sum(lam*crp*reference)+1/3,sum(reference)-sum(lam*crp*reference)+1/3)
+  psp.Crp.Lam~dbeta(sum(ifelse((1-lam)+(1-crp)>0,1,0)*(1-reference))+1/3,sum(1-reference)-sum(ifelse((1-lam)+(1-crp)>0,1,0)*(1-reference))+1/3)
+  ppv.Crp.Lam~dbeta(sum(lam*crp*reference)+1/3,sum(lam*crp)-sum(lam*crp*reference)+1/3)
+  npv.Crp.Lam~dbeta(sum(ifelse((1-lam)+(1-crp)>0,1,0)*(1-reference))+1/3,sum(ifelse((1-lam)+(1-crp)>0,1,0))-sum(ifelse((1-lam)+(1-crp)>0,1,0)*(1-reference))+1/3)
+  dyt.Crp.Lam~dbeta(sum(lam*crp)+1/3,N-sum(lam*crp)+1/3)
+  posProp.Crp.Lam=dyt.Crp.Lam
+}
