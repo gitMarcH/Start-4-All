@@ -1,7 +1,7 @@
 ---
 title: "Start 4 All Phase 1 - Statistical Analysis Plan"
 author: "Marc Henrion"
-subtitle: "v1.3 (International)"
+subtitle: "v1.4 (International)"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 format:
   html:
@@ -61,19 +61,30 @@ options(knitr.kable.NA = '.')
 
 dfAbbr<-data.frame(
   abbr=c("ACF"),
-  details=c("Active case finding; the process of actively identifying people with TB. ACF aims to identify people with TB either in those who do not recognize that they have symptoms, or those who do recognize symptoms but for whatever reason do not, or cannot, access services at health-care facilities.")
+  details=c("Active case finding: ACF is the process of actively identifying people with
+tuberculosis (TB). ACF aims to identify people with TB either in those who do not
+recognize that they have symptoms, or those who do recognize symptoms but for
+whatever reason do not, or cannot, access services at health-care facilities, or those who
+are asymptomatic.")
 )
-dfAbbr<-rbind(dfAbbr,c("CAD","Computer aided diagnostic"))
-dfAbbr<-rbind(dfAbbr,c("CRP","C reactive protein; a blood inflammatory marker measured using point of care devices or laboratory assays, which is elevated in the presence of infections, inflammatory or neoplastic (cancer) conditions, including TB. WHO recommends CRP as a screening tool for TB among people living with HIV and research studies indicate CRP  could also have a use in TB screening among people not infected with HIV."))
+dfAbbr<-rbind(dfAbbr,c("CAD","Computer-aided detection: CAD software algorithms that use deep learning
+approaches to classify the likelihood of disease. For this study this will be pulmonary TB
+based on analysis of a chest X-ray image (CXR). CAD is recommended by the World
+Health Organization (WHO) as an alternative to human interpretation of CXR for people
+aged 15 years or older."))
+dfAbbr<-rbind(dfAbbr,c("CRP","C-Reactive Protein: CRP is a blood inflammatory marker that is elevated in the presence of an infection, inflammatory or neoplastic (cancer) conditions, including TB.
+WHO recommends CRP as a screening tool for TB among people living with HIV (PLHIV)."))
 dfAbbr<-rbind(dfAbbr,c("CXR","Chest x-ray"))
 dfAbbr<-rbind(dfAbbr,c("GA","Gastric aspirate"))
-dfAbbr<-rbind(dfAbbr,c("ICF","Intensified case finding at health facilities; an activity, recommended by the WHO, intended to detect possible TB cases among people attending health facilities for reasons not associated with TB (e.g. general clinics or maternity wards)."))
-dfAbbr<-rbind(dfAbbr,c("IDP","Internally displaced people"))
-dfAbbr<-rbind(dfAbbr,c("LAM","Lipoarabinomannan"))
+dfAbbr<-rbind(dfAbbr,c("ICF","Intensified case finding: ICF is an activity, recommended by the WHO, intended to detect possible TB cases among people attending health facilities for reasons not associated with TB.). For adults, in Start4All, this will be defined as ambulatory people attending outpatient clinics. For children, this will also be defined as ambulatory children attending outpatient clinics but inpatients may be recruited if recruitment numbers or TB prevalence are lower than expected."))
+dfAbbr<-rbind(dfAbbr,c("IDP","Internally displaced persons: IDP are people living in either camps or host
+communities as a result of forced migration within a countries border."))
+dfAbbr<-rbind(dfAbbr,c("LAM","Lipoarabinomannan: LAM is a glycolipid, and a virulence factor associated with
+Mycobacterium tuberculosis, the bacterium responsible for TB. LAM is excreted in urine, where it can be detected using rapid lateral flow tests."))
 dfAbbr<-rbind(dfAbbr,c("NPA","Nasopharyngeal aspiration"))
 dfAbbr<-rbind(dfAbbr,c("NPV","Negative predictive value"))
-dfAbbr<-rbind(dfAbbr,c("PCF","Passive case finding"))
-dfAbbr<-rbind(dfAbbr,c("PLWH","People / person living with HIV"))
+dfAbbr<-rbind(dfAbbr,c("PCF","Passive case finding: PCF is a modality of case finding in which people with TB symptoms present voluntarily at health care facilities. PCF is the most common approach used by TB diagnostic services."))
+dfAbbr<-rbind(dfAbbr,c("PLHIV","People / person living with HIV"))
 dfAbbr<-rbind(dfAbbr,c("POC","Point-of-care"))
 dfAbbr<-rbind(dfAbbr,c("PPV","Positive predictive value"))
 dfAbbr<-rbind(dfAbbr,c("RDT","Rapid diagnostic test"))
@@ -94,7 +105,7 @@ dfAbbr %>%
 
 # Protocol version
 
-This Statistical Analysis Plan (SAP) v1.3 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
+This Statistical Analysis Plan (SAP) v1.4 is based on the Start 4 All International Protocol v2.0, dated 12 June 2024.
 
 ## Version history
 
@@ -104,10 +115,10 @@ This Statistical Analysis Plan (SAP) v1.3 is based on the Start 4 All Internatio
 #| tbl-cap: "Version history of the SAP since v1.0."
 
 dfHist<-data.frame(
-  Version=c("1.3","1.2","1.1","1.0"),
-  Date=c("2025-05-27","2024-05-27","2025-05-26","2025-05-25"),
-  Author=c("Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion"),
-  Edits=c("All analyses tested; mock-up output for PCF/ICF setting included","Clarified agorithms with pooled Xpert Ultra testing and updated JAGS files correspondingly","Descriptive analysis mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
+  Version=c("1.4","1.3","1.2","1.1","1.0"),
+  Date=c("2025-05-27","2025-05-27","2024-05-27","2025-05-26","2025-05-25"),
+  Author=c("Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion"),
+  Edits=c("Slight changes to protocol summary text; revised language for PCF/ICF (facility-based) ACF (community-based) and pooled (aggregate) analysis; addition of mock-ups for community-based CXR-CAD entry to study","All analyses tested; mock-up output for PCF/ICF setting included","Clarified agorithms with pooled Xpert Ultra testing and updated JAGS files correspondingly","Descriptive analysis mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
 )
 
 dfHist %>%
@@ -118,13 +129,18 @@ dfHist %>%
 
 # Protocol summary
 
-Start 4 All is a large, UNITAID funded 4-year tuberculosis (TB) study programme, running in 7 countries and consisting of 2 phases:
+Start 4 All is a four-year cross-disciplinary global tuberculosis diagnostic research programme funded by Unitaid, led by the Liverpool School of Tropical Medicine working with StopTB Partnership and partners in Bangladesh, Brazil, Cameroon, Kenya, Malawi, Nigeria and Viet Nam.
 
-* Phase 1 (18 months) - cross-sectional surveys to generate data on diagnostic assay performances in different countries and different populations and identifying optimal diagnostic test combinations (for screening purposes).
+Start 4 All aims to develop and evaluate novel combinations of tuberculosis diagnostics that are deliverable within the primary healthcare setting to increase the number of people diagnosed with tuberculosis and to ultimately improve linkage to treatment. Start4All is split into three distinct periods.
 
-* Phase 2 (30 months) - a large, multi-country implementation study to evaluate the chosen optiomal combinations in the different settings.
+1. Phase 1 (12 months) - Within all 7 countries, cross-sectional surveys to generate data on diagnostic assay performances in key, vulnerable and underserved populations. 
 
-This SAP focuses on Phase 1, with a separate SAP being written for the trial in Phase 2. There will also be a separate analysis plan for the economic evaluation of the diagnostic test combinations.
+2. Stagegate (6 months) - Utilising data generated in Phase 1, a statistical and  economical model will be developed to predict the optimal diagnostic test combination for both facility and community based screening.
+
+3. Phase 2 (18 months) - a large, multi-country implementation study to evaluate the chosen optimal combination(s) in different settings. The exact study design is not yet confirmed.
+
+This SAP focuses on Phase 1, with a separate SAP being written for the trial in Phase 2. There will also be a separate analysis plan for the economic evaluation of the diagnostic test combinations and a separate SAP for the paediatric data analysis.
+
 
 ## Study design
 
@@ -136,9 +152,9 @@ Phase 1 consists of multiple cross-sectional surveys in 7 countries and in diffe
 #| tbl-cap: "Summary of study populations, countries, and procedures."
 
 dfCountries<-data.frame(
-  Population=c("Primary health care attenders","District / secondary hospital attenders","Key / marginalised populations (informal settlements, IPDs, refugees, rural poor, pastoralists)","Children"),
+  Population=c("Primary health care attenders","District / secondary hospital attenders","Key / marginalised populations (informal settlements, IPDs, rural poor, pastoralists)","Children"),
   CurrentApproach=c("Sympton screen; sputum smear microscopy; sputum transport for Xpert","Symptom screen; sputum Xper testing (where available); 1st gen LAM for HIV positive admissions (where avilable)","Symptom screen; mobile chest X-ray (predominantly human interpretation); sputum transport for smear/Xpert/culture","Symptom screen; Xpert testing (stool, NPA, GA, where available); X-ray (human interpretation); IGRA (Viet Nam)"),
-  LocalLaboratory=c("None / basic","Medium / some with Xpert","None","Medium / some with Xpert"),
+  LocalLaboratory=c("Basic / Xpert Ultra","Medium / Xpert Ultra","Xpert Ultra only","Medium / Xpert Ultra"),
   Country=c("Bangladesh, Brazil, Cameroon, Kenya, Malawi, Nigeria, Viet Nam","Bangladesh, Cameroon, Kenya, Malawi, Nigeria, Viet Nam","Bangladesh, Cameroon, Nigeria","Cameroon, Viet Nam"),
   XrayAvailability=c("No","Yes","Limited / mobile trucks","Yes (if in hospital)"),
   CaseFindingApproach=c("PCF / ICF","PCF / ICF","PCF / ICF / ACF","PCF / ICF / ACF"),
@@ -147,13 +163,28 @@ dfCountries<-data.frame(
 )
 
 dfCountries %>% 
-  kable(row.names=FALSE,col.names=c("Population","Currently implemented TB screening / diagnosis approach","Local laboratory","Country","X-ray availability","Case finding approach","% with TB among those testes","Additional diagnostic tests and test combinations evaluated as part of Start 4 All"),format = "html")
+  kable(row.names=FALSE,col.names=c("Population","Currently implemented TB screening / diagnosis approach","Local laboratory","Country","X-ray availability","Case finding approach","% with TB among those testes","Additional diagnostic tests and test combinations evaluated as part of Start 4 All"),format = "html") %>%
+  kable_styling(full_width = FALSE)
 # %>% kableExtra::footnote(general_title="",general="NPA = nasopharyngeal aspiration, GA = gastric aspirate, CAD = computer assistant diagnostics, POC CRP = point-of-care CRP (quantitative), CRP RDT = CRP rapid diagnostic test (semiquantitative).")
 ```
 
-@tbl-countries summarises the different surveys. This study design was selected because (together with diagnostic clinical trials) surveys are considered the best design for the evaluation of diagnostics. We will evaluate the performance of HIV testing, CRP, computer assisted digital X-Rays (CAD CXR), testing multiple sputum samples by pooling them together and testing the pool with a single Xpert Ultra cartridge and urine lipoarabinomannan (LAM) as screening tests for TB. Although the performance of these tests has been described among individuals with presumptive TB, there are now updated prototypes (e.g. LAM) or software (e.g. CAD CXR) for some platforms, there is limited information on their performance among key populations (e.g. nomads/internally displaced people) and hardly any information on their performance in primary health care settings.
+@tbl-countries summarises the different surveys. This study design was selected because (together with diagnostic clinical trials) surveys are considered the best design for the evaluation of diagnostics. We will evaluate the performance of quantitative and semiqualitative CRP, computer aided detection chest x-ray (CAD CXR), the pooling of sputum from four individuals into one test cartridge and the FujiLAM^TM^ 3rd generation urine lipoarabinomannan (LAM) as screening tests for pulmonary TB.
+
+CRP, LAM and CAD CXR are conditionally recommended for use in TB screening, whether that be for those living with HIV (CRP and LAM), or in the absence of human interpreters (for CAD-CXR) but data in other key, vulnerable and under-served groups or the general population is limited. Pooling of sputum as a cost saving strategy is currently being reviewed by the WHO and it is anticipated that Phase 1 data from Start 4 All will be contribute to this process. 
 
 A composite microbiological reference standard will be used to describe the sensitivity, specificity and positive and negative predictive value of different assays and their combinations. The composite standard will classify participants as ‘microbiologically confirmed’, if their sputum culture or Xpert Ultra (as a single test) are positive or as ‘unlikely TB’ if they have negative culture AND negative Xpert Ultra results.
+
+### Case definitions
+
+Participants will be classified as:
+
+* Microbiologically confirmed TB case: Participants with a positive microbiological reference standard (MRS) test of MGIT culture (Bangladesh, Cameroon, Kenya, Malawi, Nigeria and Viet Nam) or solid culture (Brazil only). Where culture results are not available, a positive Xpert Ultra and/or smear microscopy will be used.
+
+* Clinically diagnosed TB case: Participants in whom a healthcare professional has decided to initiate TB treatment based on clinical symptoms and/or signs and/or human-interpreted CXR consistent with TB and in the absence of a positive MRS
+
+* Unlikely TB case: Participants who are neither a microbiologically confirmed TB case nor a clinically diagnosed TB case.
+
+For the purpose of the performance evaluation, we will use microbiological confirmation as the reference.
 
 @tbl-diagnostics summarises the screening assays evaluated in this study.
 
@@ -163,8 +194,8 @@ A composite microbiological reference standard will be used to describe the sens
 #| tbl-cap: "Summary of screening and diagnostic assays evaluated in this study."
 
 dfDiags<-data.frame(
-  AssayType=c("HIV testing","Point-of-care C-Reactive Protein (quantitative)","Point-of-care C-Reactive Protein (semi-quantitative)","Computer-aided detection from digital chest X-ray","Urine Lateral Flow Test","Molecular diagnostic","Molecular diagnostic"),
-  Assay=c("HIV","POC CRP","CRP RDT","Digital chest X-ray + Qure.ai","FujiLAM","Xpert Ultra","Pooled Xpert Ultra")
+  AssayType=c("Point-of-care C-Reactive Protein (quantitative)","Point-of-care, rapid diagnostic test C-Reactive Protein (semi-quantitative)","Computer-aided detection from digital chest X-ray","Urine Lateral Flow Test","Molecular diagnostic","Molecular diagnostic"),
+  Assay=c("CRP POC","CRP RDT","Digital chest X-ray + Qure.ai","FujiLAM^TM^","Xpert Ultra","Pooled Xpert Ultra")
 )
 
 dfDiags %>% 
@@ -187,11 +218,11 @@ Generation of robust estimates of the diagnostic accuracy and performance of TB 
 
 ## Sample size
 
-Diagnostic test combinations for the Phase 1 cross-sectional studies are tailored by country and key populations. We envisage conducting one cross sectional study among pastoralists, one study among refugees and IDPs, one among people living in informal settlements, one among the rural poor, and 6 studies among populations in clinical facilities (total of 18 cross sectional studies across 6 countries). Each study will comprise about 600 participants, including a minimum of 100 bacteriologically confirmed participants in most populations. The key populations and number of studies for Phase 1 studies are shown below.
+Diagnostic test combinations for the Phase 1 cross-sectional studies are tailored by country and key populations. We envisage conducting one cross sectional study among pastoralists, one study among IDPs, one among people living in informal settlements, one among the rural poor, and 6 studies among populations in clinical facilities (total of 18 cross sectional studies across 6 countries). Each study will comprise about 600 participants, including a minimum of 100 bacteriologically confirmed participants in most populations. The key populations and number of studies for Phase 1 studies are shown below.
 
 The sample sizes were chosen to comply with the sample size criterion required for WHO guideline development and to achieve an acceptable level of precision for the estimates of the performance of the diagnostic tests. The sample sizes are also suitable for estimating costs and cost-efficiency of the TB diagnostic combinations.
 
-tbl-sampSizeCalc gives the number of TB cases / number of subjects at different prevalence values for TB and different values of precision for 95% CI of point estimate of number of bacteriologically confirmed TB cases identified from each sample population. Populations with low proportions (<10%) of bacteriologically confirmed TB (children, ACF in Viet Nam), will use the same cross-sectional design, but the number of bacteriologically confirmed participants will be purposely enriched by inviting participants attending adjacent centers to the study centers. Once included in the study, participants will undergo all tests in the diagnostic combination.
+@tbl-sampSizeCalc gives the number of TB cases / number of subjects at different prevalence values for TB and different values of precision for 95% CI of point estimate of number of bacteriologically confirmed TB cases identified from each sample population. Populations with low proportions (<10%) of bacteriologically confirmed TB (children, community-based in Viet Nam), will use the same cross-sectional design, but the number of bacteriologically confirmed participants will be purposely enriched by inviting participants attending adjacent centers to the study centers. Once included in the study, participants will undergo all tests in the diagnostic combination.
 
 The calculations in tbl-sampSizeCalc have been obtained using the standard Wald normal approximation:
 
@@ -278,9 +309,9 @@ where $p_{attr}$ is the expected proportion of attrition.
 
 The studies will be analyzed individually by countries, and then as a single multi-country evaluation. The latter aims to achieve the requirements of data for WHO guidance, which requests at least 250 individuals with bacteriologically confirmed TB.
 
-As shown in @tbl-sampSizeTableByCountry, the total sample size to be enrolled varies with the average TB prevalence, target precision and expected loss-to-follow-up (individuals not completing a diagnostic process) in the individual countries and sites. However, with the assumptions shown in @tbl-sampSizeTableByCountry, and assuming an overall proportion of 50% people living with HIV (PLWH) adult participants, we estimate a sample size of 7,200 PLWH and 7,200 HIV-negative persons will include at least 548 PLWH and 548 HIV-negative persons (total 1,096) with a microbiologically confirmed diagnosis of TB.
+As shown in @tbl-sampSizeTableByCountry, the total sample size to be enrolled varies with the average TB prevalence, target precision and expected loss-to-follow-up (individuals not completing a diagnostic process) in the individual countries and sites. However, with the assumptions shown in @tbl-sampSizeTableByCountry, and assuming an overall proportion of 50% people living with HIV (PLHIV) adult participants, we estimate a sample size of 7,200 PLHIV and 7,200 HIV-negative persons will include at least 548 PLHIV and 548 HIV-negative persons (total 1,096) with a microbiologically confirmed diagnosis of TB.
 
-It is expected that countries with a high burden of HIV-associated TB (Brazil, Cameroon, Kenya, Malawi, Nigeria) will recruit an even higher ratio of PLWH to HIV-negative participants. If the recruitment of PLWH is lower than expected, countries with high burden of HIV-associated TB will enrich recruitment towards this population by recruiting in HIV care and treatment clinics and outpatient centres.
+It is expected that countries with a high burden of HIV-associated TB (Brazil, Cameroon, Kenya, Malawi, Nigeria) will recruit an even higher ratio of PLHIV to HIV-negative participants. If the recruitment of PLHIV is lower than expected, countries with high burden of HIV-associated TB will enrich recruitment towards this population by recruiting in HIV care and treatment clinics and outpatient centres.
 
 The number of adult males is expected to be higher than the number of females, as more males are affected by TB and a higher proportion of males than females attend primary and secondary clinics. The proportion of participants with TB that is obtained at the end of Phase 1 may vary from the expected proportion of participants with TB due to the inclusion of ICF and ACF in the study in settings in which they are not normally applied (i.e. ICF being conducted in PHC clinics). Additionally, some populations maybe feel more encouraged or discouraged to participate in the study, which may be reflected in the proportion of TB cases for a particular setting and the reasons behind this may be elucidated during the Realist Evaluation.
 
@@ -290,7 +321,7 @@ The number of adult males is expected to be higher than the number of females, a
 
 dfSSCountry<-data.frame(
   country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Viet Nam",3),rep("Malawi",1),"TOTAL"),
-  setting=c("PHC clinics","District hospital","Informal settlement / rural poor ACF","Children","PHC clinics","District hospital","Nomads","IDP / refugees","PHC clinics","District hospital","PHC clinics","District hospital","Informal settlements / rural poor ACF","PHC clinics Aracaju","PHC clinics Maceio","PHC clinics","Informal settlements ACF","Children","PHC clinics",NA),
+  setting=c("PHC clinics","District hospital","Informal settlement / rural poor","Children","PHC clinics","District hospital","Nomads","Internally displaced people","PHC clinics","District hospital","PHC clinics","District hospital","Informal settlements / rural poor","PHC clinics Aracaju","PHC clinics Maceio","District hospital","Informal settlements","Children","PHC clinics",NA),
   expectedTbProp=c(paste(sep="",c(9,8,5,4,10,20,8,12,9,20,5,3,5,15,27,2,1,0,6),"%"),NA),
   targetPrecision=c(paste(sep="",c(7,7,10,15,6.5,5.5,7,6,8,5.5,9,12,9,7,5.5,15,17,NA,8),"%"),NA),
   expectedAttrition=c(paste(sep="",c(20,12,15,20,18,18,12,20,12,18,14,16,14,5,10,20,20,NA,20),"%"),NA),
@@ -465,7 +496,9 @@ P-values $\geq 0.001$ and $\leq 0.999$ will be reported to 3 decimal places; p-v
 
 ### Missing data
 
-As all samples for the test diagnostics get taken at the only study visit, we expect only marginal missing data. Any missing data that does arise we expect to be due to technical reasons unrelated to the outcome of interest. However, we do expect that there will be some missing data, both for individual tests as well as for the reference standard and participant demographic and clinical data. Since we are adopting a Bayesian framework, we can easily incorporate missing data imputation as part of the MCMC process: by specifying distributions for all parameters of interest, the MCMC algorithm will consider any missing data to be no different than the unknown parameters of interest to our investigation. It will essentially impute a value for each sample at each iteration in the MCMC chains and incorporate the uncertainty of that imputation through the distribution building up over the full set of MCMC chains and iterations.
+We expect only marginal missing data - for many participants all required samples will be taken on their first and only study visit. However, there can be more than one study visit. A person is approached on first entering the healthcare facility. If they are unable to give any of the samples they are asked to return the next day. The health care workers will follow-up a maximum of 3 times over a 1 week period. Any missing data that do arise we expect to be mainly due to technical reasons unrelated to the outcome of interest (but could arise also from the above visit schedule if not all samples are taken on the first visit).
+
+We do expect that there will be some missing data, both for individual tests as well as for the reference standard and participant demographic and clinical data. Since we are adopting a Bayesian framework, we can easily incorporate missing data imputation as part of the MCMC process: by specifying distributions for all parameters of interest, the MCMC algorithm will consider any missing data to be no different than the unknown parameters of interest to our investigation. It will essentially impute a value for each sample at each iteration in the MCMC chains and incorporate the uncertainty of that imputation through the distribution building up over the full set of MCMC chains and iterations.
 
 
 ### Technical details
@@ -501,11 +534,11 @@ As we will use a Bayesian approach (see @sec-estimation), we will estimate poste
 
 In addition to providing tables with these posterior point estimates, we will also construct forest plots showing sensitivities and specificities for each algorithm.
 
-### PCF / ICF / ACF analyses
+### Facility and community analyses
 
-Start 4 All populations use a mix of passive case finding (PCF), intensified case finding (ICF) and active finding (ACF) strategies. We will not distinguish between PCF and ICF for the purpose of the diagnostic performance evaluation; however for PCF/ICF, which are used in facility-based screening, we will distinguish between lowest level of care and district / referral level of care.
+Start 4 All populations use a mix of passive case finding (PCF), intensified case finding (ICF) for facility-based case finding and active finding (ACF) for community-based case finding. Within facility-based screening, we will distinguish between lowest level of care and district / referral level of care.
 
-The modelling approach detailed below will be applied to each of the populations and settings for Start 4 All. What will differ however are the specific algorithms being evaluated for PCF/ICF on the one hand and ACF on the other (see further below for the list of algorithms evaluated).
+The modelling approach detailed below will be applied to each of the populations and settings for Start 4 All. What will differ however are the specific algorithms being evaluated for facility-based case finding on the one hand and community based case finding on the other (see further below for the list of algorithms evaluated).
 
 ### Thresholds for diagnostic tests: CRP and CXR-CAD {#sec-thresholds}
 
@@ -521,13 +554,13 @@ We will use the following thresholds to define positive/negative status for the 
 
 * CXR-CAD:
 
-  + PCF/ICF: positive if CAD (Qure-ai) score $\geq 0.5$, negative otherwise,
-  + ACF: positive if CAD (Qure.ai) score $\geq 0.3$, negative otherwise.
+  + Facility-based: positive if CAD (Qure-ai) score $\geq 0.5$, negative otherwise,
+  + Community-based: positive if CAD (Qure.ai) score $\geq 0.3$, negative otherwise.
 
 These are the threshold we will use for the primary analysis. For secondary analyses, we will use:
 
 * Quantitative CRP with threshold $\geq 10\, mg/L$,
-* CXR-CAD AI score with thresholds $\geq 0.3$ (in PCF/ICF) and $\geq 0.5$ (in ACF).
+* CXR-CAD AI score with thresholds $\geq 0.3$ (in facility-based) and $\geq 0.5$ (in community-based).
 
 Note that for the primary analysis we will only use quantitative CRP, but sensitivity analyses will use semi-quantitative CRP and a hybrid of quantitative and semi-quantitative CRP (positive if either is positive).
 
@@ -539,29 +572,29 @@ All analyses specified in this SAP will be for adult participants only (defined 
 All analyses, primary as well as secondary, will be stratified by:
 
 * Country (but for facility-based we will also compute results pooled across countries).
-* Facility-based (PCF/ICF) vs. key populations-based (ACF) recruitment.
-* Within facility-based recruitment: PLWH vs people with negative or unknown HIV status (but we will also compute results for all participants regardless of HIV status).
+* Facility-based (PCF/ICF) vs. community / key population-based (ACF) recruitment.
+* Within facility-based recruitment: PLHIV vs people with negative or unknown HIV status (but we will also compute results for all participants regardless of HIV status).
 * Within facility-based recruitment: lowest level of care vs. district level.
 * Within key populations: recruitment via W4SS or CXR-CAD recruitment. We will also analysis a hybrid recruitment of either W4SS or CAD-CXR positive screening.
 
 In summary, analyses (primary as well as secondary) will be done in the following groups:
 
-1. ACF, W4SS positive screening (separately for each country and key population).
-2. ACF, CAD-CXR positive screening (separately for each country and key population).
-3. ACF, W4SS pr CAD-CXR positive screening (separately for each country and key population).
-4. PCF/ICF, lowest level of care, all participants (separately per country and pooled across countries).
-5. PCF/ICF, lowest level of care, PLWH (separately per country and pooled across countries).
-6. PCF/ICF, lowest level of care, people with negative or unknown HIV status (separately per country and pooled across countries).
-7. PCF/ICF, district level, all participants (separately per country and pooled across countries).
-8. PCF/ICF, district level, PLWH (separately per country and pooled across countries).
-9. PCF/ICF, district level, people with negative or unknown HIV status (separately per country and pooled across countries).
+1. Community-based, W4SS positive screening (separately for each country and key population).
+2. Community-based, CAD-CXR positive screening (separately for each country and key population).
+3. Community-based, W4SS pr CAD-CXR positive screening (separately for each country and key population).
+4. Facility-based, lowest level of care, all participants (separately per country and aggregate across countries).
+5. Facility-based, lowest level of care, PLHIV (separately per country and aggregate across countries).
+6. Facility-based, lowest level of care, people with negative or unknown HIV status (separately per country and aggregate across countries).
+7. Facility-based, district level, all participants (separately per country and aggregate across countries).
+8. Facility-based, district level, PLHIV (separately per country and aggregate across countries).
+9. Facility-based, district level, people with negative or unknown HIV status (separately per country and aggregate across countries).
 
 
 ### Tuberculosis screening and diagnostic algorithms {#sec-algos}
 
 For notation, to denote that we will use `-->` to refer to one assay followed by another assay and `|` to refer to assays being administered in parallel. In other words, combination `A | B --> C --> D` refers to a an algorithm where if either assay A or assay B gives a positive result (or both are positive) then proceed to assay C, and if that one is positive, then proceed to assay D (and record the outcome from that assay), else record a negative result.
 
-#### PCF/ICF
+#### Facility-based
 
 We will distinguish between lowest level of care and district-level settings, but the algorithms evaluated are the same.
 
@@ -586,11 +619,11 @@ We will distinguish between lowest level of care and district-level settings, bu
 19. `CRP --> LAM`
 20. `CXR-CAD | CRP --> LAM`
 
-#### 2. ACF
+#### 2. Community-based
 
 We will distinguish between W4SS positive, CAD-CXR positive and a hybrid approach (either of W4SS, CAD-CXR positive) entry into the study. Conditional on the first step, the algorithms evaluated differ slightly depending on whether or not the first step involved CXR-CAD.
 
-##### ACF - W4SS entry
+##### Community-based - W4SS entry
 
 To note that these are the exact same algorithms as for PCF/ICF (both have W4SS entry into the study).
 
@@ -615,9 +648,9 @@ To note that these are the exact same algorithms as for PCF/ICF (both have W4SS 
 19. `CRP --> LAM`
 20. `CXR-CAD | CRP --> LAM`
 
-##### ACF - CXR-CAD entry or (CXR-CAD or W4SS) entry
+##### Community-based - CXR-CAD entry or (CXR-CAD or W4SS) entry
 
-The algorithms evaluated for the CXR-CAD entry to the study in ACF or the hybrid approach where either a positive W4SS screening or a positive CXR-CAD makes a participant eligible for the study are the same.
+The algorithms evaluated for the CXR-CAD entry to the study in community-based screening or the hybrid approach where either a positive W4SS screening or a positive CXR-CAD makes a participant eligible for the study are the same.
 
 1. `Xpert Ultra with pooling --> Xpert Ultra`
 2. `Xpert Ultra`
@@ -737,9 +770,9 @@ $$\Sigma\sim\mbox{invWishart}(\Lambda,\eta)\qquad \Lambda=I,\; \eta=2\cdot m+1$$
 8. This final distribution for $\pi|\mathbf{T}$ is not necessarily a beta distribution itself (since M and K are random themselves). For the performance evaluation, we will report the distribution as is. However to feed this posterior distribution into the health economic modelling, we will assume that it can be approximated by one. We will use quantile-matching to identify the best-fitting beta distribution for the resulting empirical distribution from the MCMC output. The beta distribution parameters from this best-fit beta distribution are then entered into the health economic modelling.
 
 
-#### Pooled PCF/ICF analysis at lowest level of care
+#### Aggregate facility-based analysis at lowest level of care
 
-For facility-based screening, we will pool the data from all Start 4 All partner countries to estimate a single set of performance metrics at i) lowest level of care and ii) district-level care.
+For facility-based screening, we will combine the data from all Start 4 All partner countries to estimate a single set of performance metrics at i) lowest level of care and ii) district-level care.
 
 There is a need to account for country-level variation in the estimation procedure described above.
 
@@ -1283,7 +1316,7 @@ This section only exists to hold the chunk of R code that fits the Bayesian mode
 
 # prepare output data frame
 dfResPrimBayes<-data.frame(
-  country=c(rep("Cameroon",6),rep("Nigeria",8),rep("Kenya",2),rep("Bangladesh",5),rep("Brazil",2),rep("Viet Nam",5),rep("Malawi",1),"Pooled","Pooled"),
+  country=c(rep("Cameroon",6),rep("Nigeria",8),rep("Kenya",2),rep("Bangladesh",5),rep("Brazil",2),rep("Viet Nam",5),rep("Malawi",1),"Aggregate","Aggregate"),
   region=c(rep("",6),c(rep("ZRC",2),rep("JHF",6)),rep("",2+5),"Aracaju","Maceio",rep("",5+1),rep("",2)),
   setting=c("PHC","District",rep("Nomads",3),"Children","PHC","District",rep("Nomads",3),rep("IDP / refugees",3),"PHC","District","PHC","District",rep("Informal settlements",3),"PHC","PHC","District",rep("Informal settlements",3),"Children","PHC","PHC","District"),
   entryToStudy=c(rep("W4SS",2),"W4SS","CXR","W4SS | CXR","",rep("W4SS",2),"W4SS","CXR","W4SS | CXR","W4SS","CXR","W4SS | CXR",rep("W4SS",2),rep("W4SS",2),"W4SS","CXR","W4SS | CXR",rep("W4SS",2),"W4SS","W4SS","CXR","W4SS | CXR","","W4SS",rep("W4SS",2))
@@ -1303,7 +1336,7 @@ outPrefix<-"mockData_AnalysisResults_"
 for(i in 1:(nrow(dfResPrimBayes)-2)){
   print(i)
   
-  if(dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Pooled"){
+  if(dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Aggregate"){
     res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ss,parsVect=parsVectW4ssNoLR)
     
     # derive positive and negative likelihood ratios
@@ -1323,7 +1356,7 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
-        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (PCF/ICF set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (Facility-based screening set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
         kable_styling(full_width=FALSE)
     }
     
@@ -1347,7 +1380,7 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
       values<-c(values,outTmp)
     }
     
-  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS" & dfResPrimBayes$country[i]!="Pooled"){
+  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS" & dfResPrimBayes$country[i]!="Aggregate"){
     res<-analysisFunBayesBetaPars(dat=dfSim %>% filter(!is.na(w4ss) & w4ss==1),c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ss,parsVect=parsVectW4ssNoLR)
     
     # derive positive and negative likelihood ratios
@@ -1366,7 +1399,7 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
-        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms, W4SS entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (community-based screening set of diagnostic algorithms, W4SS entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
         kable_styling(full_width=FALSE)
     }
     
@@ -1390,7 +1423,7 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
       values<-c(values,outTmp)
     }
     
-  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="CXR" & dfResPrimBayes$country[i]!="Pooled"){
+  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="CXR" & dfResPrimBayes$country[i]!="Aggregate"){
     res<-analysisFunBayesBetaPars(dat=dfSim %>% filter(!is.na(cxr) & cxr==1),c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
     
     # derive positive and negative likelihood ratios
@@ -1409,7 +1442,7 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
-        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms, CXR-CAD entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (community-based screening set of diagnostic algorithms, CXR-CAD entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
         kable_styling(full_width=FALSE)
     }
     
@@ -1433,7 +1466,7 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
       values<-c(values,outTmp)
     }
     
-  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR" & dfResPrimBayes$country[i]!="Pooled"){
+  }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR" & dfResPrimBayes$country[i]!="Aggregate"){
     res<-analysisFunBayesBetaPars(dat=dfSim %>% filter((!is.na(w4ss) & w4ss==1) | (!is.na(cxr) & cxr==1)),c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
     
     # derive positive and negative likelihood ratios
@@ -1452,7 +1485,7 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
-        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms, W4SS | CXR-CAD entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (community-based screening set of diagnostic algorithms, W4SS | CXR-CAD entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
         kable_styling(full_width=FALSE)
     }
     
@@ -1476,39 +1509,39 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
       values<-c(values,outTmp)
     }
     
-  }else if(dfResPrimBayes$setting[i]=="Children" & dfResPrimBayes$country[i]!="Pooled"){
+  }else if(dfResPrimBayes$setting[i]=="Children" & dfResPrimBayes$country[i]!="Aggregate"){
     cat("Children processing not yet implemented.\n")
     values<-NA
-  }else if(dfResPrimBayes$country[i]!="Pooled"){
+  }else if(dfResPrimBayes$country[i]!="Aggregate"){
     stop("Invalid setting parameter.")
   }
   
-  if(!checkW4ssFacility & dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Pooled"){
+  if(!checkW4ssFacility & dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Aggregate"){
     dfResW4ssFacility<-values
     checkW4ssFacility<-TRUE
-  }else if(checkW4ssFacility & dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Pooled"){
+  }else if(checkW4ssFacility & dfResPrimBayes$setting[i] %in% c("PHC","District") & dfResPrimBayes$country[i]!="Aggregate"){
     dfResW4ssFacility<-rbind(dfResW4ssFacility,values)
-  }else if(!checkW4ssAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS"){
+  }else if(!checkW4ssAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Aggregate" & dfResPrimBayes$entryToStudy[i]=="W4SS"){
     dfResW4ssAcf<-values
     checkW4ssAcf<-TRUE
-  }else if(checkW4ssAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS"){
+  }else if(checkW4ssAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Aggregate" & dfResPrimBayes$entryToStudy[i]=="W4SS"){
     dfResW4ssAcf<-rbind(dfResW4ssAcf,values)
-  }else if(!checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="CXR"){
+  }else if(!checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Aggregate" & dfResPrimBayes$entryToStudy[i]=="CXR"){
     dfResCxrAcf<-values
     checkCxrAcf<-TRUE
-  }else if(checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="CXR"){
+  }else if(checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Aggregate" & dfResPrimBayes$entryToStudy[i]=="CXR"){
     dfResCxrAcf<-rbind(dfResCxrAcf,values)
-  }else if(!checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
+  }else if(!checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Aggregate" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
     dfResW4ssCxrAcf<-values
     checkW4ssCxrAcf<-TRUE
-  }else if(checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
+  }else if(checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Aggregate" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
     dfResW4ssCxrAcf<-rbind(dfResW4ssCxrAcf,values)
   }
 }
 
 
-# Pooled PHC
-res<-analysisFunBayesBetaParsPool(dat=dfSim,set="PHC",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_PHC","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ssNoLR)
+# Aggregate PHC
+res<-analysisFunBayesBetaParsPool(dat=dfSim,set="PHC",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Aggregate_PHC","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ssNoLR)
     
 ## derive positive and negative likelihood ratios
 res$mcmcObj<-getLRpLRm(res$mcmcObj)
@@ -1526,7 +1559,7 @@ mcmcSumDf<-mcmcSumDf[parsVectW4ss,]
 # add the summary to the result object
 res[["mcmcSummary"]]<-mcmcSumDf
 
-allRes[["Pooled__PHC"]]<-res
+allRes[["Aggregate__PHC"]]<-res
 
 values<-numeric(0)
 tmpParList<-parsVectW4ss[!grepl(pattern="lrp|lrm",parsVectW4ss)]
@@ -1545,8 +1578,8 @@ for(j in 1:length(tmpParList)){
 
 dfResW4ssFacility<-rbind(dfResW4ssFacility,values)
 
-# Pooled district
-res<-analysisFunBayesBetaParsPool(dat=dfSim,set="District",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_District","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ssNoLR)
+# Aggregate district
+res<-analysisFunBayesBetaParsPool(dat=dfSim,set="District",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Aggregate_District","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ssNoLR)
     
 ## derive positive and negative likelihood ratios
 res$mcmcObj<-getLRpLRm(res$mcmcObj)
@@ -1564,7 +1597,7 @@ mcmcSumDf<-mcmcSumDf[parsVectW4ss,]
 # add the summary to the result object
 res[["mcmcSummary"]]<-mcmcSumDf
 
-allRes[["Pooled__District"]]<-res
+allRes[["Aggregate__District"]]<-res
 
 values<-numeric(0)
 tmpParList<-parsVectW4ss[!grepl(pattern="lrp|lrm",parsVectW4ss)]
@@ -1627,13 +1660,13 @@ write.csv(dfResW4ssCxrAcf,row.names=F,file=paste(sep="","mockData_AnalysisResult
 save(list=c("allRes","dfResPrimBayes"),file=paste(sep="","mockData_AnalysisResults_",gsub(pattern="-",replacement="",Sys.Date()),".RData"))
 ```
 
-#### PCF / ICF lowest level of care
+#### Facility-based lowest level of care
 
-Below in @tbl-primAnalPcfIcf we present how we plan to present results for the overall PCF/ICF evaluation at lowest levels of primary care.
+Below in @tbl-primAnalPcfIcf we present how we plan to present results for the overall facility-based evaluation at lowest levels of primary care.
 
 ```{r}
 #| label: tbl-primAnalPcfIcf
-#| tbl-cap: "PCF/ICF evaluation (all participants): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios for PHC / lowest level of primary care settings."
+#| tbl-cap: "Facility-based evaluation (all participants): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios for PHC / lowest level of primary care settings."
 
 algoNames<-c("Poolxpert.Xpert",
              "Xpert",
@@ -1711,7 +1744,7 @@ for(j in 1:nrow(dfAlgos)){
   
   # prevalence of asymptomatics
   tmp<-unlist(strsplit(split="_",as.character(dfAlgos$setting[j])))
-  if(tmp[1]!="Pooled"){
+  if(tmp[1]!="Aggregate"){
     dfTmp<-dfSim %>% filter(country==tmp[1] & region==tmp[2] & setting==tmp[3])
   }else{
     dfTmp<-dfSim %>% filter(setting==tmp[3])
@@ -1779,7 +1812,7 @@ colnames(dfAlgos)<-case_when(
 
 dfAlgos %>%
   dplyr::select(!contains("code") & !contains("DYD") & !contains("Algorithm")) %>%
-  kable(caption="PCF/ICF algorithm evaluation for PHC / lowest levels of primary care settings (all participants). Asymptomatics proportions are estimated directly, using exact binomial confidence intervals, from the data (not modelled). All other parameters are posterior estimates from the Bayesian modelling approach.") %>%
+  kable(caption="Facility-based algorithm evaluation for PHC / lowest levels of primary care settings (all participants). Asymptomatics proportions are estimated directly, using exact binomial confidence intervals, from the data (not modelled). All other parameters are posterior estimates from the Bayesian modelling approach.") %>%
   kableExtra::kable_styling(full_width = FALSE) %>%
   kableExtra::group_rows(index=table(fct_inorder(dfAlgos$Algorithm)))
 ```
@@ -1788,7 +1821,7 @@ In figure @fig-forestPcfIcf_PHC we show how we plan to summarise sensitivities a
 
 ```{r}
 #| label: fig-forestPcfIcf_PHC
-#| fig-cap: "PCF/ICF evaluation (all participants): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings."
+#| fig-cap: "Facility-based evaluation (all participants): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings."
 #| fig-width: 11
 #| fig-height: 40
 
@@ -2117,13 +2150,13 @@ dfAlgos %>%
 
 -->
 
-#### PCF / ICF district level
+#### Facility-based district level
 
 The PCF/ICF district-level results (which will be for the exact same algorithms) will be presented in the same way as the results for the lowest level of care setting (but obviously slight variation in countries for which data are available).
 
-#### ACF W4SS entry
+#### Community-based, W4SS entry
 
-The ACF W4SS district-level results (which will be for the exact same algorithms) will be presented in the same way as the results for the lowest level of care setting (but obviously slight variation in countries for which data are available as well as multiple settings that use ACF).
+The community-based W4SS district-level results (which will be for the exact same algorithms) will be presented in the same way as the results for the lowest level of care setting (but obviously slight variation in countries for which data are available as well as multiple settings that use community-based screening).
 
 <!--
 Below in @tbl-primAnalBayesOneCountryAcfW4ss we present how we will present results for the overall ACF evaluations - taking the example of Cameroon informal settlements.
@@ -2222,9 +2255,350 @@ dfAlgos %>%
 
 These will be presented similarly, though involve a different set of evaluated algorithms (see @sec-algos).
 
+```{r}
+#| label: tbl-primAnalAcfCxr
+#| tbl-cap: "Community-based evaluation (all participants; CXR entry to study): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios."
+
+algoNames<-c("Poolxpert.Xpert",
+             "Xpert",
+             "Lam",
+             "Crp.Poolxpert.Xpert",
+             "Lam.Poolxpert.Xpert",
+             "CrpLam.Poolxpert.Xpert",
+             "Crp.Xpert",
+             "Lam.Xpert",
+             "CrpLam.Xpert",
+             "Crp.Lam"
+)
+
+algoLabels<-c("Pooled Xpert Ultra --> Xpert Ultra",
+             "Xpert Ultra",
+             "LAM",
+             "CRP --> Pooled Xpert Ultra --> Xpert Ultra",
+             "LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+             "CRP | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+             "CRP --> Xpert Ultra",
+             "LAM --> Xpert Ultra",
+             "CRP | LAM --> Xpert Ultra",
+             "CRP --> LAM"
+)
+
+settings<-paste(sep="_",dfResPrimBayes$country,dfResPrimBayes$region,dfResPrimBayes$setting)
+settings<-settings[dfResPrimBayes$entryToStudy=="CXR"]
+settings<-settings[c(length(settings),1:(length(settings)-1))]
+
+gr<-expand.grid(settings,algoNames)
+
+dfAlgos<-data.frame(
+  setting=gr[,1],
+  algo=gr[,2],
+  label=algoLabels[match(gr[,2],algoNames)],
+  prev=NA,
+  prevAS=NA,
+  sens=NA,
+  spec=NA,
+  ppv=NA,
+  npv=NA,
+  dyt=NA,
+  lrp=NA,
+  lrm=NA
+)
+
+for(j in 1:nrow(dfAlgos)){
+  res<-allRes[[as.character(dfAlgos$setting[j])]]
+  par<-dfAlgos$algo[j]
+  
+  # prevalence
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary["ptb","50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary["ptb",c("2.5%","97.5%")])),")")
+  dfAlgos$prev[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # prevalence of asymptomatics
+  tmp<-unlist(strsplit(split="_",as.character(dfAlgos$setting[j])))
+  if(tmp[1]!="Aggregate"){
+    dfTmp<-dfSim %>% filter(country==tmp[1] & region==tmp[2] & setting==tmp[3])
+  }else{
+    dfTmp<-dfSim %>% filter(setting==tmp[3])
+  }
+  k<-sum(!dfTmp$w4ss)
+  n<-nrow(dfTmp)
+  pointEstimate<-round(digits=4,k/n)
+  ci<-round(digits=4,binom.test(x=k,n=n)$conf.int)
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",ci)),")")
+  dfAlgos$prevAS[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # sensitivity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","pse.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","pse.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$sens[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # specificity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","psp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","psp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$spec[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # PPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","ppv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","ppv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$ppv[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # NPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","npv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","npv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$npv[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # DYT
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","dyt.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","dyt.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$dyt[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # LR+
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrp[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # LR-
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrm.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrm.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrm[j]<-paste(sep=" ",pointEstimate,ci)
+}
+
+dfAlgos$setting<-gsub(pattern="_+",replacement=" ",dfAlgos$setting)
+
+colnames(dfAlgos)<-case_when(
+  colnames(dfAlgos)=="setting"~"Country & setting",
+  colnames(dfAlgos)=="algo"~"Algorithm code",
+  colnames(dfAlgos)=="label"~"Algorithm",
+  colnames(dfAlgos)=="prev"~"Prevalence",
+  colnames(dfAlgos)=="prevAS"~"Prevalence of asymptomatics",
+  colnames(dfAlgos)=="sens"~"Sensitivity",
+  colnames(dfAlgos)=="spec"~"Specificity",
+  colnames(dfAlgos)=="ppv"~"PPV",
+  colnames(dfAlgos)=="npv"~"NPV",
+  colnames(dfAlgos)=="dyt"~"DYT",
+  colnames(dfAlgos)=="dyd"~"DYD",
+  colnames(dfAlgos)=="lrp"~"Positive LR",
+  colnames(dfAlgos)=="lrm"~"Negative LR"
+)
+
+dfAlgos %>%
+  dplyr::select(!contains("code") & !contains("Algorithm")) %>%
+  kable(caption="Community-based algorithm evaluation (all participants; CXR-CAD entry to study). Asymptomatics proportions are estimated directly, using exact binomial confidence intervals, from the data (not modelled). All other parameters are posterior estimates from the Bayesian modelling approach.") %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::group_rows(index=table(fct_inorder(dfAlgos$Algorithm)))
+```
+
+In figure @fig-forestAcfCxr we show how we plan to summarise sensitivities and specificities (the primary interest of the performance evaluation).
+
+```{r}
+#| label: fig-forestAcfCxr
+#| fig-cap: "Community-based evaluation (all participants; CXR-CAD entry to study): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings."
+#| fig-width: 11
+#| fig-height: 14
+
+algoNames<-c("Poolxpert.Xpert",
+             "Xpert",
+             "Lam",
+             "Crp.Poolxpert.Xpert",
+             "Lam.Poolxpert.Xpert",
+             "CrpLam.Poolxpert.Xpert",
+             "Crp.Xpert",
+             "Lam.Xpert",
+             "CrpLam.Xpert",
+             "Crp.Lam"
+)
+
+algoLabels<-c("Pooled Xpert Ultra --> Xpert Ultra",
+             "Xpert Ultra",
+             "LAM",
+             "CRP --> Pooled Xpert Ultra --> Xpert Ultra",
+             "LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+             "CRP | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+             "CRP --> Xpert Ultra",
+             "LAM --> Xpert Ultra",
+             "CRP | LAM --> Xpert Ultra",
+             "CRP --> LAM"
+)
+
+settings<-paste(sep="_",dfResPrimBayes$country,dfResPrimBayes$region,dfResPrimBayes$setting)
+settings<-settings[dfResPrimBayes$entryToStudy=="CXR"]
+settings<-settings[c(length(settings),1:(length(settings)-1))]
+
+gr<-expand.grid(settings,algoNames)
+
+dfAlgos<-data.frame(
+  setting=gr[,1],
+  algo=gr[,2],
+  label=algoLabels[match(gr[,2],algoNames)],
+  
+  sensTxt=NA,
+  sensMedian=NA,
+  sensLow=NA,
+  sensUpp=NA,
+  
+  specTxt=NA,
+  specMedian=NA,
+  specLow=NA,
+  specUpp=NA,
+  
+  ppvTxt=NA,
+  ppvMedian=NA,
+  ppvLow=NA,
+  ppvUpp=NA,
+  
+  npvTxt=NA,
+  npvMedian=NA,
+  npvLow=NA,
+  npvUpp=NA,
+  
+  dytTxt=NA,
+  dytMedian=NA,
+  dytLow=NA,
+  dytUpp=NA,
+  
+  dydTxt=NA,
+  dydMedian=NA,
+  dydLow=NA,
+  dydUpp=NA,
+  
+  lrpTxt=NA,
+  lrpMedian=NA,
+  lrpLow=NA,
+  lrpUpp=NA,
+  
+  lrmTxt=NA,
+  lrmMedian=NA,
+  lrmLow=NA,
+  lrmUpp=NA
+)
+
+for(j in 1:nrow(dfAlgos)){
+  res<-allRes[[as.character(dfAlgos$setting[j])]]
+  par<-dfAlgos$algo[j]
+  
+  # sensitivity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","pse.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","pse.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$sensTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$sensMedian[j]<-pointEstimate
+  dfAlgos$sensLow[j]<-res$mcmcSummary[paste(sep="","pse.",par),c("2.5%")]
+  dfAlgos$sensUpp[j]<-res$mcmcSummary[paste(sep="","pse.",par),c("97.5%")]
+  
+  # specificity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","psp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","psp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$specTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$specMedian[j]<-pointEstimate
+  dfAlgos$specLow[j]<-res$mcmcSummary[paste(sep="","psp.",par),c("2.5%")]
+  dfAlgos$specUpp[j]<-res$mcmcSummary[paste(sep="","psp.",par),c("97.5%")]
+  
+  # PPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","ppv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","ppv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$ppvTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$ppvMedian[j]<-pointEstimate
+  dfAlgos$ppvLow[j]<-res$mcmcSummary[paste(sep="","ppv.",par),c("2.5%")]
+  dfAlgos$ppvUpp[j]<-res$mcmcSummary[paste(sep="","ppv.",par),c("97.5%")]
+  
+  # NPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","npv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","npv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$npvTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$npvMedian[j]<-pointEstimate
+  dfAlgos$npvLow[j]<-res$mcmcSummary[paste(sep="","npv.",par),c("2.5%")]
+  dfAlgos$npvUpp[j]<-res$mcmcSummary[paste(sep="","npv.",par),c("97.5%")]
+  
+  # DYT
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","dyt.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","dyt.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$dytTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$dytMedian[j]<-pointEstimate
+  dfAlgos$dytLow[j]<-res$mcmcSummary[paste(sep="","dyt.",par),c("2.5%")]
+  dfAlgos$dytUpp[j]<-res$mcmcSummary[paste(sep="","dyt.",par),c("97.5%")]
+  
+  # LR+
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrpTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$lrpMedian[j]<-pointEstimate
+  dfAlgos$lrpLow[j]<-res$mcmcSummary[paste(sep="","lrp.",par),c("2.5%")]
+  dfAlgos$lrpUpp[j]<-res$mcmcSummary[paste(sep="","lrp.",par),c("97.5%")]
+  
+  # LR-
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrm.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrm.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrmTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$lrmMedian[j]<-pointEstimate
+  dfAlgos$lrmLow[j]<-res$mcmcSummary[paste(sep="","lrm.",par),c("2.5%")]
+  dfAlgos$lrmUpp[j]<-res$mcmcSummary[paste(sep="","lrm.",par),c("97.5%")]
+}
+
+uniqueAlgos<-unique(dfAlgos$label)
+
+for(i in 1:length(uniqueAlgos)){
+  if(i==1){
+    dt<-c(uniqueAlgos[i],rep("",10))
+    names(dt)<-c("Setting","sensCI","sensEst","sensLow","sensHigh","Sensitivity","specCI","specEst","specLow","specHigh","Specificity")
+  }else{
+    dt<-rbind(dt,c(uniqueAlgos[i],rep("",10)))
+  }
+  dfAlgosTmp<-dfAlgos %>% dplyr::filter(label==uniqueAlgos[i])
+  dtTmp<-cbind(gsub(paste(sep="","   ",dfAlgosTmp$setting),pattern="_+",replacement=" "),
+               dfAlgosTmp$sensTxt,dfAlgosTmp$sensMedian,dfAlgosTmp$sensLow,dfAlgosTmp$sensUpp,paste(rep(" ", 20), collapse = " "),
+               dfAlgosTmp$specTxt,dfAlgosTmp$specMedian,dfAlgosTmp$specLow,dfAlgosTmp$specUpp,paste(rep(" ", 20), collapse = " "))
+  colnames(dtTmp)<-c("Setting","sensCI","sensEst","sensLow","sensHigh","Sensitivity","specCI","specEst","specLow","specHigh","Specificity")
+  dt<-rbind(dt,dtTmp)
+  rm(dtTmp,dfAlgosTmp)
+}
+
+dt<-as.data.frame(dt)
+dt$sensEst<-as.double(dt$sensEst)
+dt$sensLow<-as.double(dt$sensLow)
+dt$sensHigh<-as.double(dt$sensHigh)
+dt$specEst<-as.double(dt$specEst)
+dt$specLow<-as.double(dt$specLow)
+dt$specHigh<-as.double(dt$specHigh)
+
+dt$sensCI[dt$sensCI=="NA"]<-""
+dt$specCI[dt$specCI=="NA"]<-""
+
+# Set-up theme
+tm <- forest_theme(base_size = 10,
+                   refline_gp = gpar(lty="blank"),
+                   ci_pch = c(15),
+                   ci_col = c("steelblue"),
+                   footnote_gp = gpar(col = "darkgreen",fontsize=8),
+                   vertline_lty = c("dashed", "dashed"),
+                   vertline_col = c("darkred","orange"),
+                   # Table cell padding, width 4 and heights 3
+                   core = list(padding = unit(c(4, 3), "mm")))
+
+p <- forest(dt[,c("Setting","sensCI","Sensitivity","specCI","Specificity")],
+            est = list(dt$sensEst,dt$specEst),
+            lower = list(dt$sensLow,dt$specLow),
+            upper = list(dt$sensHigh,dt$specHigh),
+            ci_column = c(3, 5),
+            ref_line = 1,
+            vert_line = list(c(0.75,0.85),c(0.90,0.95)),
+            nudge_y = 0,
+            theme = tm,
+            xlim=c(0,1),
+            footnote="The dashed lines indicate minimum (red) and optimum (orange) thresholds.")
+
+plot(p)
+
+pdf(paste(sep="",outPrefix,"S4A_mcmcPars_forestPlot_AcfCxr_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),width=11,height=14)
+plot(p)
+dev.off()
+```
+
 #### ACF (W4SS or CXR-CAD) entry
 
-These will be presented similarly, though involve a different set of evaluated algorithms (see @sec-algos).
+These will be presented similarly as for CXR-CAD only entry to study.
+
+#### Stratified analyses
+
+All of the above analyses will be repeated, stratified by HIV status (PLHIV and participants with unknown or negative HIV status).
 
 
 ## Link-up with the health economic analysis
@@ -2329,9 +2703,9 @@ dfResPrimBetaBayes %>%
 
 # List of figures
 
-@fig-forestPcfIcf_PHC: PCF/ICF evaluation (all participants): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings.
+@fig-forestPcfIcf_PHC: Facility-based evaluation (all participants): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings.
 
-The final version of the SAP will include figures for other settings beyond PCF/ICF.
+@fig-forestAcfCxr: Community-based evaluation (all participants; CXR-CAD entry to study): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings.
 
 # List of tables
 
@@ -2353,9 +2727,9 @@ The final version of the SAP will include figures for other settings beyond PCF/
 
 @tbl-perfSummary: Summary of the performance of individual tests compared against culture and Xpert Ultra.
 
-@tbl-primAnalPcfIcf: PCF/ICF evaluation (all participants): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios for PHC / lowest level of primary care settings.
+@tbl-primAnalPcfIcf: Facility-based evaluation (all participants): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios for PHC / lowest level of primary care settings.
 
-The final version of the SAP will include mock-ups tables for other settings beyond PCF/ICF.
+@tbl-primAnalAcfCxr: Community-based evaluation (all participants; CXR entry to study): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios.
 
 <!--
 @tbl-primAnalBayesOneCountryPcf: Performance metric estimates of the evaluated tests in a PCF/ICF setting for an example country (Malawi).
