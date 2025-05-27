@@ -1,7 +1,7 @@
 ---
 title: "Start 4 All Phase 1 - Statistical Analysis Plan"
 author: "Marc Henrion"
-subtitle: "v1.1 (International)"
+subtitle: "v1.2 (International)"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 format:
   html:
@@ -93,7 +93,7 @@ dfAbbr %>%
 
 # Protocol version
 
-This Statistical Analysis Plan (SAP) v1.1 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
+This Statistical Analysis Plan (SAP) v1.2 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
 
 ## Version history
 
@@ -103,10 +103,10 @@ This Statistical Analysis Plan (SAP) v1.1 is based on the Start 4 All Internatio
 #| tbl-cap: "Version history of the SAP since v1.0."
 
 dfHist<-data.frame(
-  Version=c("1.1","1.0"),
-  Date=c("2025-05-25","2025-05-26"),
-  Author=c("Marc Henrion","Marc Henrion"),
-  Edits=c("Mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
+  Version=c("1.2","1.1","1.0"),
+  Date=c("2024-05-27","2025-05-26","2025-05-25"),
+  Author=c("Marc Henrion","Marc Henrion","Marc Henrion"),
+  Edits=c("Clarified agorithms with pooled Xpert Ultra testing and updated JAGS files correspondingly","Mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
 )
 
 dfHist %>%
@@ -558,22 +558,22 @@ In summary, analyses (primary as well as secondary) will be done in the followin
 
 ### Tuberculosis screening and diagnostic algorithms
 
-For notation, to denote that we will use `-->` to refer to one assay followed by another assay and `|` to refer to assays being administered in parallel. In other words, combination `A | B --> C` refers to a an algorithm where if either assay A or assay B gives a positive result (or both are positive) then proceed to assay C (and record the outcome from that assay), else record a negative result.
+For notation, to denote that we will use `-->` to refer to one assay followed by another assay and `|` to refer to assays being administered in parallel. In other words, combination `A | B --> C --> D` refers to a an algorithm where if either assay A or assay B gives a positive result (or both are positive) then proceed to assay C, and if that one is positive, then proceed to assay D (and record the outcome from that assay), else record a negative result.
 
 #### PCF/ICF
 
 We will distinguish between lowest level of care and district-level settings, but the algorithms evaluated are the same.
 
-1. `Xpert Ultra with pooling`
+1. `Xpert Ultra with pooling --> Xpert Ultra`
 2. `Xpert Ultra`
 3. `LAM`
-4. `CXR-CAD --> Xpert Ultra with pooling`
-5. `CRP --> Xpert Ultra with pooling`
-6. `LAM --> Xpert Ultra with pooling`
-7. `CXR-CAD | CRP | LAM --> Xpert Ultra with pooling`
-8. `CXR-CAD | LAM --> Xpert Ultra with pooling`
-9. `CRP | LAM --> Xpert Ultra with pooling`
-10. `CXR-CAD | CRP --> Xpert Ultra with pooling`
+4. `CXR-CAD --> Xpert Ultra with pooling --> Xpert Ultra`
+5. `CRP --> Xpert Ultra with pooling --> Xpert Ultra`
+6. `LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+7. `CXR-CAD | CRP | LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+8. `CXR-CAD | LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+9. `CRP | LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+10. `CXR-CAD | CRP --> Xpert Ultra with pooling --> Xpert Ultra`
 11. `CXR-CAD --> Xpert Ultra`
 12. `CRP --> Xpert Ultra`
 13. `LAM --> Xpert Ultra`
@@ -593,23 +593,23 @@ We will distinguish between W4SS positive, CAD-CXR positive and a hybrid approac
 
 To note that these are the exact same algorithms as for PCF/ICF (both have W4SS entry into the study).
 
-1. `Xpert Ultra with pooling`
+1. `Xpert Ultra with pooling --> Xpert Ultra`
 2. `Xpert Ultra`
 3. `LAM`
-4. `CXR-CAD -> Xpert Ultra with pooling`
-5. `CRP -> Xpert Ultra with pooling`
-6. `LAM -> Xpert Ultra with pooling`
-7. `CXR-CAD | CRP | LAM --> Xpert Ultra with pooling`
-8. `CXR-CAD | LAM --> Xpert Ultra with pooling`
-9. `CRP | LAM --> Xpert Ultra with pooling`
-10. `CXR-CAD | CRP --> Xpert Ultra with pooling`
+4. `CXR-CAD -> Xpert Ultra with pooling --> Xpert Ultra`
+5. `CRP -> Xpert Ultra with pooling --> Xpert Ultra`
+6. `LAM -> Xpert Ultra with pooling --> Xpert Ultra`
+7. `CXR-CAD | CRP | LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+8. `CXR-CAD | LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+9. `CRP | LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+10. `CXR-CAD | CRP --> Xpert Ultra with pooling --> Xpert Ultra`
 11. `CXR-CAD --> Xpert Ultra`
 12. `CRP --> Xpert Ultra`
 13. `LAM --> Xpert Ultra`
 14. `CXR-CAD | CRP | LAM --> Xpert Ultra`
 15. `CXR-CAD | LAM --> Xpert Ultra`
 16. `CRP | LAM --> Xpert Ultra`
-17. `CXR-CAD | CRP --> Xpert Ultra with pooling`
+17. `CXR-CAD | CRP --> Xpert Ultra`
 18. `CXR-CAD --> LAM`
 19. `CRP --> LAM`
 20. `CXR-CAD | CRP --> LAM`
@@ -618,12 +618,12 @@ To note that these are the exact same algorithms as for PCF/ICF (both have W4SS 
 
 The algorithms evaluated for the CXR-CAD entry to the study in ACF or the hybrid approach where either a positive W4SS screening or a positive CXR-CAD makes a participant eligible for the study are the same.
 
-1. `Xpert Ultra with pooling`
+1. `Xpert Ultra with pooling --> Xpert Ultra`
 2. `Xpert Ultra`
 3. `LAM`
-4. `CRP --> Xpert Ultra with pooling`
-5. `LAM --> Xpert Ultra with pooling`
-6. `CRP | LAM --> Xpert Ultra with pooling`
+4. `CRP --> Xpert Ultra with pooling --> Xpert Ultra`
+5. `LAM --> Xpert Ultra with pooling --> Xpert Ultra`
+6. `CRP | LAM --> Xpert Ultra with pooling --> Xpert Ultra`
 7. `CRP --> Xpert Ultra`
 8. `LAM --> Xpert Ultra`
 9. `CRP | LAM --> Xpert Ultra`
