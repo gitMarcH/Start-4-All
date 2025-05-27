@@ -855,8 +855,8 @@ This version of the SAP includes some mock-ups but not yet all mock-ups as they 
 #| message: false
 #| warning: false
 
-parsVectW4ss<-as.vector(unlist(read.csv(header=F,"../../output/20250526/parameters_forRscript_w4ss.txt")[1,]))
-parsVectCxr<-as.vector(unlist(read.csv(header=F,"../../output/20250526/parameters_forRscript_cxr.txt")[1,]))
+parsVectW4ss<-as.vector(unlist(read.csv(header=F,"../../output/20250527/parameters_forRscript_w4ss.txt")[1,]))
+parsVectCxr<-as.vector(unlist(read.csv(header=F,"../../output/20250527/parameters_forRscript_cxr.txt")[1,]))
 
 parsListW4ss.ab<-character(0)
 for(par in parsVectW4ss){
@@ -878,12 +878,12 @@ for(par in parsVectCxr){
   }
 }
 
-jagsFileW4ss<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_20250526_clean.jags"
-jagsFileW4ssNoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_20250526_clean.noHIVstatus.jags"
-jagsFileCxr<-"../../scripts/S4A_jagsPerformanceModel_entryCXR_20250526_clean.jags"
-jagsFileCxr.NoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryCXR_20250526_clean.noHIVstatus.jags"
-jagsFileW4ssPooled<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_pooledFacility_20250526_clean.jags"
-jagsFileW4ssPooled.NoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_pooledFacility_20250526_clean.noHIVstatus.jags"
+jagsFileW4ss<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_20250527_clean.jags"
+jagsFileW4ssNoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_20250527_clean.noHIVstatus.jags"
+jagsFileCxr<-"../../scripts/S4A_jagsPerformanceModel_entryCXR_20250527_clean.jags"
+jagsFileCxr.NoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryCXR_20250527_clean.noHIVstatus.jags"
+jagsFileW4ssPooled<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_pooledFacility_20250527_clean.jags"
+jagsFileW4ssPooled.NoHiv<-"../../scripts/S4A_jagsPerformanceModel_entryW4SS_pooledFacility_20250527_clean.noHIVstatus.jags"
 
 nChains<-4
 nAdapt<-1000 # 3000 in full analysis
