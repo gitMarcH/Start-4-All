@@ -1,7 +1,7 @@
 ---
 title: "Start 4 All Phase 1 - Statistical Analysis Plan"
 author: "Marc Henrion"
-subtitle: "v1.2 (International)"
+subtitle: "v1.3 (International)"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 format:
   html:
@@ -35,6 +35,7 @@ library(rjags)
 library(coda)
 library(MCMCvis)
 library(rms)
+library(forestploter)
 
 options(knitr.kable.NA = '.')
 ```
@@ -93,7 +94,7 @@ dfAbbr %>%
 
 # Protocol version
 
-This Statistical Analysis Plan (SAP) v1.2 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
+This Statistical Analysis Plan (SAP) v1.3 is based on the Start 4 All International Protocol v1.6, dated 22 May 2023.
 
 ## Version history
 
@@ -103,10 +104,10 @@ This Statistical Analysis Plan (SAP) v1.2 is based on the Start 4 All Internatio
 #| tbl-cap: "Version history of the SAP since v1.0."
 
 dfHist<-data.frame(
-  Version=c("1.2","1.1","1.0"),
-  Date=c("2024-05-27","2025-05-26","2025-05-25"),
-  Author=c("Marc Henrion","Marc Henrion","Marc Henrion"),
-  Edits=c("Clarified agorithms with pooled Xpert Ultra testing and updated JAGS files correspondingly","Mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
+  Version=c("1.3","1.2","1.1","1.0"),
+  Date=c("2025-05-27","2024-05-27","2025-05-26","2025-05-25"),
+  Author=c("Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion"),
+  Edits=c("All analyses tested; mock-up output for PCF/ICF setting included","Clarified agorithms with pooled Xpert Ultra testing and updated JAGS files correspondingly","Descriptive analysis mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
 )
 
 dfHist %>%
@@ -136,9 +137,9 @@ Phase 1 consists of multiple cross-sectional surveys in 7 countries and in diffe
 
 dfCountries<-data.frame(
   Population=c("Primary health care attenders","District / secondary hospital attenders","Key / marginalised populations (informal settlements, IPDs, refugees, rural poor, pastoralists)","Children"),
-  CurrentApproach=c("Sympton screen; sputum smear microscopy; sputum transport for Xpert","Symptom screen; sputum Xper testing (where available); 1st gen LAM for HIV positive admissions (where avilable)","Symptom screen; mobile chest X-ray (predominantly human interpretation); sputum transport for smear/Xpert/culture","Symptom screen; Xpert testing (stool, NPA, GA, where available); X-ray (human interpretation); IGRA (Vietnam)"),
+  CurrentApproach=c("Sympton screen; sputum smear microscopy; sputum transport for Xpert","Symptom screen; sputum Xper testing (where available); 1st gen LAM for HIV positive admissions (where avilable)","Symptom screen; mobile chest X-ray (predominantly human interpretation); sputum transport for smear/Xpert/culture","Symptom screen; Xpert testing (stool, NPA, GA, where available); X-ray (human interpretation); IGRA (Viet Nam)"),
   LocalLaboratory=c("None / basic","Medium / some with Xpert","None","Medium / some with Xpert"),
-  Country=c("Bangladesh, Brazil, Cameroon, Kenya, Malawi, Nigeria, Vietnam","Bangladesh, Cameroon, Kenya, Malawi, Nigeria, Vietnam","Bangladesh, Cameroon, Nigeria","Cameroon, Vietnam"),
+  Country=c("Bangladesh, Brazil, Cameroon, Kenya, Malawi, Nigeria, Viet Nam","Bangladesh, Cameroon, Kenya, Malawi, Nigeria, Viet Nam","Bangladesh, Cameroon, Nigeria","Cameroon, Viet Nam"),
   XrayAvailability=c("No","Yes","Limited / mobile trucks","Yes (if in hospital)"),
   CaseFindingApproach=c("PCF / ICF","PCF / ICF","PCF / ICF / ACF","PCF / ICF / ACF"),
   PercentWithTBAmongTested=c("5-15%","10-20%","0.5-10%","8-12%"),
@@ -190,7 +191,7 @@ Diagnostic test combinations for the Phase 1 cross-sectional studies are tailore
 
 The sample sizes were chosen to comply with the sample size criterion required for WHO guideline development and to achieve an acceptable level of precision for the estimates of the performance of the diagnostic tests. The sample sizes are also suitable for estimating costs and cost-efficiency of the TB diagnostic combinations.
 
-tbl-sampSizeCalc gives the number of TB cases / number of subjects at different prevalence values for TB and different values of precision for 95% CI of point estimate of number of bacteriologically confirmed TB cases identified from each sample population. Populations with low proportions (<10%) of bacteriologically confirmed TB (children, ACF in Vietnam), will use the same cross-sectional design, but the number of bacteriologically confirmed participants will be purposely enriched by inviting participants attending adjacent centers to the study centers. Once included in the study, participants will undergo all tests in the diagnostic combination.
+tbl-sampSizeCalc gives the number of TB cases / number of subjects at different prevalence values for TB and different values of precision for 95% CI of point estimate of number of bacteriologically confirmed TB cases identified from each sample population. Populations with low proportions (<10%) of bacteriologically confirmed TB (children, ACF in Viet Nam), will use the same cross-sectional design, but the number of bacteriologically confirmed participants will be purposely enriched by inviting participants attending adjacent centers to the study centers. Once included in the study, participants will undergo all tests in the diagnostic combination.
 
 The calculations in tbl-sampSizeCalc have been obtained using the standard Wald normal approximation:
 
@@ -288,7 +289,7 @@ The number of adult males is expected to be higher than the number of females, a
 #| tbl-cap: "Sample size for each survey."
 
 dfSSCountry<-data.frame(
-  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Vietnam",3),rep("Malawi",1),"TOTAL"),
+  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Viet Nam",3),rep("Malawi",1),"TOTAL"),
   setting=c("PHC clinics","District hospital","Informal settlement / rural poor ACF","Children","PHC clinics","District hospital","Nomads","IDP / refugees","PHC clinics","District hospital","PHC clinics","District hospital","Informal settlements / rural poor ACF","PHC clinics Aracaju","PHC clinics Maceio","PHC clinics","Informal settlements ACF","Children","PHC clinics",NA),
   expectedTbProp=c(paste(sep="",c(9,8,5,4,10,20,8,12,9,20,5,3,5,15,27,2,1,0,6),"%"),NA),
   targetPrecision=c(paste(sep="",c(7,7,10,15,6.5,5.5,7,6,8,5.5,9,12,9,7,5.5,15,17,NA,8),"%"),NA),
@@ -310,7 +311,7 @@ dfSSCountry %>%
   pack_rows("Kenya",9,10) %>%
   pack_rows("Bangladesh",11,13) %>%
   pack_rows("Brazil",14,15) %>%
-  pack_rows("Vietnam",16,18) %>%
+  pack_rows("Viet Nam",16,18) %>%
   pack_rows("Malawi",19,19) %>%
   pack_rows("TOTAL",20,20)
 ```
@@ -343,43 +344,43 @@ sensSpecMatHiv<-data.frame(
   sens=rnorm(n=7,mean=0.7,sd=0.02),
   spec=rnorm(n=7,mean=0.6,sd=0.01)
 )
-rownames(sensSpecMatHiv)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatHiv)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 sensSpecMatW4ss<-data.frame(
   sens=rnorm(n=7,mean=0.80,sd=0.02),
   spec=rnorm(n=7,mean=0.65,sd=0.01)
 )
-rownames(sensSpecMatW4ss)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatW4ss)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 sensSpecMatSsm<-data.frame(
   sens=rnorm(n=7,mean=0.70,sd=0.02),
   spec=rnorm(n=7,mean=0.95,sd=0.01)
 )
-rownames(sensSpecMatSsm)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatSsm)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 sensSpecMatCrp<-data.frame(
   sens=rnorm(n=7,mean=0.9,sd=0.02),
   spec=rnorm(n=7,mean=0.95,sd=0.01)
 )
-rownames(sensSpecMatCrp)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatCrp)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 sensSpecMatLam<-data.frame(
   sens=rnorm(n=7,mean=0.82,sd=0.02),
   spec=rnorm(n=7,mean=0.9,sd=0.01)
 )
-rownames(sensSpecMatLam)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatLam)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 sensSpecMatPoolxpert<-data.frame(
   sens=rnorm(n=7,mean=0.92,sd=0.01),
   spec=rnorm(n=7,mean=0.97,sd=0.01)
 )
-rownames(sensSpecMatPoolxpert)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatPoolxpert)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 sensSpecMatCxr<-data.frame(
   sens=rnorm(n=7,mean=0.88,sd=0.025),
   spec=rnorm(n=7,mean=0.88,sd=0.02)
 )
-rownames(sensSpecMatCxr)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatCxr)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 sensSpecMatXpert<-data.frame(
   sens=rnorm(n=7,mean=0.98,sd=0.005),
@@ -387,15 +388,15 @@ sensSpecMatXpert<-data.frame(
 )
 sensSpecMatXpert$sens[sensSpecMatXpert$sens>=0.99999]<-0.99999
 sensSpecMatXpert$spec[sensSpecMatXpert$spec>=0.99999]<-0.99999
-rownames(sensSpecMatXpert)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Vietnam","Malawi")
+rownames(sensSpecMatXpert)<-c("Cameroon","Nigeria","Kenya","Bangladesh","Brazil","Viet Nam","Malawi")
 
 
 dfSim<-data.frame(
   PID=c(paste(sep="_","Ca",1:3300),paste(sep="_","Ni",1:3400),paste(sep="_","Ke",1:1400),paste(sep="_","Ba",1:3000),paste(sep="_","Br_Ar",1:500),paste(sep="_","Br_Ma",1:500),paste(sep="_","Vi",1:3000),paste(sep="_","Ma",1:1200)),
+  region=c(rep("",3300),rep("ZRC",1400),rep("JHF",2000),rep("",1400+3000),rep("Aracaju",500),rep("Maceio",500),rep("",3000+1200)),
+  country=c(rep("Cameroon",3300),rep("Nigeria",3400),rep("Kenya",1400),rep("Bangladesh",3000),rep("Brazil",1000),rep("Viet Nam",3000),rep("Malawi",1200)),
   region=c(rep("",3300+3400+1400+3000),rep("Aracaju",500),rep("Maceio",500),rep("",3000+1200)),
-  country=c(rep("Cameroon",3300),rep("Nigeria",3400),rep("Kenya",1400),rep("Bangladesh",3000),rep("Brazil",1000),rep("Vietnam",3000),rep("Malawi",1200)),
-  region=c(rep("",3300+3400+1400+3000),rep("Aracaju",500),rep("Maceio",500),rep("",3000+1200)),
-  setting=c(rep("PHC",1000),rep("District",1000),rep("Informal settlements ACF",800),rep("Children",500),rep("PHC",700),rep("District",700),rep("Nomads",1000),rep("IDP / refugees",1000),rep("PHC",700),rep("District",700),rep("PHC",1000),rep("District",1000),rep("Informal settlements ACF",1000),rep("PHC",1000),rep("PHC",1000),rep("Informal settlements ACF",1500),rep("Children",500),rep("PHC",1200)),
+  setting=c(rep("PHC",1000),rep("District",1000),rep("Nomads",800),rep("Children",500),rep("PHC",700),rep("District",700),rep("Nomads",1000),rep("IDP / refugees",1000),rep("PHC",700),rep("District",700),rep("PHC",1000),rep("District",1000),rep("Informal settlements",1000),rep("PHC",1000),rep("District",1000),rep("Informal settlements",1500),rep("Children",500),rep("PHC",1200)),
   reference=c(rbinom(n=1000,size=1,prob=0.09),rbinom(n=1000,size=1,prob=0.08),rbinom(n=800,size=1,prob=0.05),rbinom(n=500,size=1,prob=0.04),rbinom(n=700,size=1,prob=0.20),rbinom(n=700,size=1,prob=0.20),rbinom(n=1000,size=1,prob=0.08),rbinom(n=1000,size=1,prob=0.12),rbinom(n=700,size=1,prob=0.09),rbinom(n=700,size=1,prob=0.20),rbinom(n=1000,size=1,prob=0.05),rbinom(n=1000,size=1,prob=0.03),rbinom(n=1000,size=1,prob=0.05),rbinom(n=500,size=1,prob=0.15),rbinom(n=500,size=1,prob=0.27),rbinom(n=1000,size=1,prob=0.02),rbinom(n=1500,size=1,prob=0.01),rbinom(n=500,size=1,prob=0.001),rbinom(n=1200,size=1,prob=0.08))
   ) %>%
   dplyr::mutate(
@@ -533,7 +534,7 @@ Note that for the primary analysis we will only use quantitative CRP, but sensit
 
 ### Stratification
 
-All analyses specified in this SAP will be for adult participants only (defined as 15 or above, though due to local regulation some countries recruited 18 or above only). While Vietnam and Cameroon also recruited children (14 or below), there will be a separate SAP for the paediatric performance evluation.
+All analyses specified in this SAP will be for adult participants only (defined as 15 or above, though due to local regulation some countries recruited 18 or above only). While Viet Nam and Cameroon also recruited children (14 or below), there will be a separate SAP for the paediatric performance evluation.
 
 All analyses, primary as well as secondary, will be stratified by:
 
@@ -556,7 +557,7 @@ In summary, analyses (primary as well as secondary) will be done in the followin
 9. PCF/ICF, district level, people with negative or unknown HIV status (separately per country and pooled across countries).
 
 
-### Tuberculosis screening and diagnostic algorithms
+### Tuberculosis screening and diagnostic algorithms {#sec-algos}
 
 For notation, to denote that we will use `-->` to refer to one assay followed by another assay and `|` to refer to assays being administered in parallel. In other words, combination `A | B --> C --> D` refers to a an algorithm where if either assay A or assay B gives a positive result (or both are positive) then proceed to assay C, and if that one is positive, then proceed to assay D (and record the outcome from that assay), else record a negative result.
 
@@ -753,7 +754,7 @@ Let:
 
 where the indices ${i,j,l}$ iterate over:
 
-* $l=\mbox{Bangladesh, Brazil, Cameroon, Kenya, Malawi, Nigeria, Vietnam}$,
+* $l=\mbox{Bangladesh, Brazil, Cameroon, Kenya, Malawi, Nigeria, Viet Nam}$,
 * $j=\mbox{cxr, crp, lam, pXpert, sXpert}$,
 * $i=1,\ldots,N$
 
@@ -1089,7 +1090,7 @@ getLRpLRm<-function(mcmcObj){
   return(mcmcObj)
 }
 
-gr<-expand.grid(c("pse","psp","ppv","npv","dyt","posProp","lrm","lrp"),c("W4ss","Crp","Cxr","Lam","Poolxpert","Xpert","Ssm"))
+gr<-expand.grid(c("pse","psp","ppv","npv","dyt","posProp","lrm","lrp"),c("Crp","Cxr","Lam","Poolxpert","Xpert","Ssm"))
 parsVectPrim<-apply(MARGIN=1,FUN=paste,gr,collapse=".")
 ```
 
@@ -1274,10 +1275,11 @@ dfPerf %>%
 ```
 
 
-#### PCF / ICF lowest level of care
+#### Fit the Bayesian models
+
+This section only exists to hold the chunk of R code that fits the Bayesian models for all settings that we are considering. There is no other output.
 
 ```{r analysis}
-#| eval: false
 
 # prepare output data frame
 dfResPrimBayes<-data.frame(
@@ -1331,36 +1333,40 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
     
     values<-numeric(0)
-    for(j in 1:length(parsVectW4ss)){
-      parTmp<-unlist(strsplit(split="\\.",parsVectW4ss[j]))
-      parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
-      parTmp.par<-parTmp[2]
-      if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
-      values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+    tmpParList<-parsVectW4ss[!grepl(pattern="lrp|lrm",parsVectW4ss)]
+    for(j in 1:length(tmpParList)){
+      parTmp<-unlist(strsplit(split="\\.",tmpParList[j]))
+      if(length(parTmp)==1){
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"))
+      }else{
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"),paste(collapse=".",parTmp[2:length(parTmp)]))
+      }
+      if(!(tmpParList[j] %in% res$betaPars$par)){cat(paste(sep="","Parameter ",tmpParList[j]," not found in MCMC parameter list.\n"))}
+      outTmp<-unlist(res$betaPars[res$betaPars$par==tmpParList[j],c("a","b")])
+      names(outTmp)<-parTmp.ab
+      values<-c(values,outTmp)
     }
     
   }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS" & dfResPrimBayes$country[i]!="Pooled"){
-    res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ss,parsVect=parsVectW4ssNoLR)
+    res<-analysisFunBayesBetaPars(dat=dfSim %>% filter(!is.na(w4ss) & w4ss==1),c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ss,parsVect=parsVectW4ssNoLR)
     
     # derive positive and negative likelihood ratios
     res$mcmcObj<-getLRpLRm(res$mcmcObj)
     
     # format the summary
     mcmcSumDf<-MCMCsummary(res$mcmcObj)
-    parsVectAcfNoLR<-parsVectAcf
-    parsVectAcf<-unique(c(parsVectAcf,rownames(mcmcSumDf)))
     mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
     mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
     mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
     mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
     mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
     mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
-    mcmcSumDf<-mcmcSumDf[parsVectAcf,]
+    mcmcSumDf<-mcmcSumDf[parsVectW4ss,]
 
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
-        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms, W4SS entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
         kable_styling(full_width=FALSE)
     }
     
@@ -1370,36 +1376,40 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
     
     values<-numeric(0)
-    for(j in 1:length(parsListAcf)){
-      parTmp<-unlist(strsplit(split="\\.",parsListAcf[j]))
-      parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
-      parTmp.par<-parTmp[2]
-      if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
-      values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+    tmpParList<-parsVectW4ss[!grepl(pattern="lrp|lrm",parsVectW4ss)]
+    for(j in 1:length(tmpParList)){
+      parTmp<-unlist(strsplit(split="\\.",tmpParList[j]))
+      if(length(parTmp)==1){
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"))
+      }else{
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"),paste(collapse=".",parTmp[2:length(parTmp)]))
+      }
+      if(!(tmpParList[j] %in% res$betaPars$par)){cat(paste(sep="","Parameter ",tmpParList[j]," not found in MCMC parameter list.\n"))}
+      outTmp<-unlist(res$betaPars[res$betaPars$par==tmpParList[j],c("a","b")])
+      names(outTmp)<-parTmp.ab
+      values<-c(values,outTmp)
     }
     
   }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="CXR" & dfResPrimBayes$country[i]!="Pooled"){
-    res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
+    res<-analysisFunBayesBetaPars(dat=dfSim %>% filter(!is.na(cxr) & cxr==1),c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
     
     # derive positive and negative likelihood ratios
     res$mcmcObj<-getLRpLRm(res$mcmcObj)
     
     # format the summary
     mcmcSumDf<-MCMCsummary(res$mcmcObj)
-    parsVectAcfNoLR<-parsVectAcf
-    parsVectAcf<-unique(c(parsVectAcf,rownames(mcmcSumDf)))
     mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
     mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
     mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
     mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
     mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
     mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
-    mcmcSumDf<-mcmcSumDf[parsVectAcf,]
+    mcmcSumDf<-mcmcSumDf[parsVectCxr,]
 
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
-        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms, CXR-CAD entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
         kable_styling(full_width=FALSE)
     }
     
@@ -1409,36 +1419,40 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
     
     values<-numeric(0)
-    for(j in 1:length(parsListAcf)){
-      parTmp<-unlist(strsplit(split="\\.",parsListAcf[j]))
-      parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
-      parTmp.par<-parTmp[2]
-      if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
-      values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+    tmpParList<-parsVectCxr[!grepl(pattern="lrp|lrm",parsVectCxr)]
+    for(j in 1:length(tmpParList)){
+      parTmp<-unlist(strsplit(split="\\.",tmpParList[j]))
+      if(length(parTmp)==1){
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"))
+      }else{
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"),paste(collapse=".",parTmp[2:length(parTmp)]))
+      }
+      if(!(tmpParList[j] %in% res$betaPars$par)){cat(paste(sep="","Parameter ",tmpParList[j]," not found in MCMC parameter list.\n"))}
+      outTmp<-unlist(res$betaPars[res$betaPars$par==tmpParList[j],c("a","b")])
+      names(outTmp)<-parTmp.ab
+      values<-c(values,outTmp)
     }
     
   }else if(dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR" & dfResPrimBayes$country[i]!="Pooled"){
-    res<-analysisFunBayesBetaPars(dat=dfSim,c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
+    res<-analysisFunBayesBetaPars(dat=dfSim %>% filter((!is.na(w4ss) & w4ss==1) | (!is.na(cxr) & cxr==1)),c=dfResPrimBayes$country[i],r=dfResPrimBayes$region[i],s=dfResPrimBayes$setting[i],doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_",dfResPrimBayes$country[i],"_",dfResPrimBayes$region[i],"_",gsub(pattern=" / ",replacement="_",dfResPrimBayes$setting[i]),"_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileCxr,parsVect=parsVectCxrNoLR)
     
     # derive positive and negative likelihood ratios
     res$mcmcObj<-getLRpLRm(res$mcmcObj)
     
     # format the summary
     mcmcSumDf<-MCMCsummary(res$mcmcObj)
-    parsVectAcfNoLR<-parsVectAcf
-    parsVectAcf<-unique(c(parsVectAcf,rownames(mcmcSumDf)))
     mcmcSumDf$mean<-format(nsmall=3,round(digits=3,mcmcSumDf$mean))
     mcmcSumDf$sd<-format(nsmall=3,round(digits=3,mcmcSumDf$sd))
     mcmcSumDf$`2.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`2.5%`))
     mcmcSumDf$`50%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`50%`))
     mcmcSumDf$`97.5%`<-format(nsmall=3,round(digits=3,mcmcSumDf$`97.5%`))
     mcmcSumDfPrim<-mcmcSumDf[parsVectPrim,]
-    mcmcSumDf<-mcmcSumDf[parsVectAcf,]
+    mcmcSumDf<-mcmcSumDf[parsVectCxr,]
 
     # print the results
     if(printResults){
       mcmcSumDfPrim %>%
-        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
+        kable(caption = paste(sep="","Summary of the MCMC parameter estimation (individual tests only) for country ",dfResPrimBayes$country[i],", region ",dfResPrimBayes$region[i],", setting ",dfResPrimBayes$setting[i]," (ACF set of diagnostic algorithms, W4SS | CXR-CAD entry).\nMetrics shown are the posterior mean, standard deviation, 2.5th, 50th, 97.5th quantiles, the Gelman-Rubin potential scale reduction factor (Rhat) and the effective sample size (n.eff).")) %>%
         kable_styling(full_width=FALSE)
     }
     
@@ -1448,12 +1462,18 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     allRes[[paste(sep="_",dfResPrimBayes$country[i],dfResPrimBayes$region[i],dfResPrimBayes$setting[i])]]<-res
     
     values<-numeric(0)
-    for(j in 1:length(parsListAcf)){
-      parTmp<-unlist(strsplit(split="\\.",parsListAcf[j]))
-      parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
-      parTmp.par<-parTmp[2]
-      if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
-      values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+    tmpParList<-parsVectCxr[!grepl(pattern="lrp|lrm",parsVectCxr)]
+    for(j in 1:length(tmpParList)){
+      parTmp<-unlist(strsplit(split="\\.",tmpParList[j]))
+      if(length(parTmp)==1){
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"))
+      }else{
+        parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"),paste(collapse=".",parTmp[2:length(parTmp)]))
+      }
+      if(!(tmpParList[j] %in% res$betaPars$par)){cat(paste(sep="","Parameter ",tmpParList[j]," not found in MCMC parameter list.\n"))}
+      outTmp<-unlist(res$betaPars[res$betaPars$par==tmpParList[j],c("a","b")])
+      names(outTmp)<-parTmp.ab
+      values<-c(values,outTmp)
     }
     
   }else if(dfResPrimBayes$setting[i]=="Children" & dfResPrimBayes$country[i]!="Pooled"){
@@ -1473,22 +1493,22 @@ for(i in 1:(nrow(dfResPrimBayes)-2)){
     checkW4ssAcf<-TRUE
   }else if(checkW4ssAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS"){
     dfResW4ssAcf<-rbind(dfResW4ssAcf,values)
+  }else if(!checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="CXR"){
+    dfResCxrAcf<-values
+    checkCxrAcf<-TRUE
+  }else if(checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="CXR"){
+    dfResCxrAcf<-rbind(dfResCxrAcf,values)
   }else if(!checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
     dfResW4ssCxrAcf<-values
     checkW4ssCxrAcf<-TRUE
   }else if(checkW4ssCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
     dfResW4ssCxrAcf<-rbind(dfResW4ssCxrAcf,values)
-  }else if(!checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
-    dfResCxrAcf<-values
-    checkCxrAcf<-TRUE
-  }else if(checkCxrAcf & dfResPrimBayes$setting[i] %in% c("IDP / refugees","Informal settlements","Nomads") & dfResPrimBayes$country[i]!="Pooled" & dfResPrimBayes$entryToStudy[i]=="W4SS | CXR"){
-    dfResCxrAcf<-rbind(dfResCxrAcf,values)
   }
 }
 
 
 # Pooled PHC
-res<-analysisFunBayesBetaParsPool(dat=dfSim,set="PHC",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_PHC","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ss)
+res<-analysisFunBayesBetaParsPool(dat=dfSim,set="PHC",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_PHC","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ssNoLR)
     
 ## derive positive and negative likelihood ratios
 res$mcmcObj<-getLRpLRm(res$mcmcObj)
@@ -1509,18 +1529,24 @@ res[["mcmcSummary"]]<-mcmcSumDf
 allRes[["Pooled__PHC"]]<-res
 
 values<-numeric(0)
-for(j in 1:length(parsVectW4ss)){
-  parTmp<-unlist(strsplit(split="\\.",parsVectW4ss[j]))
-  parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
-  parTmp.par<-parTmp[2]
-  if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
-  values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+tmpParList<-parsVectW4ss[!grepl(pattern="lrp|lrm",parsVectW4ss)]
+for(j in 1:length(tmpParList)){
+  parTmp<-unlist(strsplit(split="\\.",tmpParList[j]))
+  if(length(parTmp)==1){
+    parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"))
+  }else{
+    parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"),paste(collapse=".",parTmp[2:length(parTmp)]))
+  }
+  if(!(tmpParList[j] %in% res$betaPars$par)){cat(paste(sep="","Parameter ",tmpParList[j]," not found in MCMC parameter list.\n"))}
+  outTmp<-unlist(res$betaPars[res$betaPars$par==tmpParList[j],c("a","b")])
+  names(outTmp)<-parTmp.ab
+  values<-c(values,outTmp)
 }
 
-dfRes<-rbind(dfResW4ssFacility,values)
+dfResW4ssFacility<-rbind(dfResW4ssFacility,values)
 
 # Pooled district
-res<-analysisFunBayesBetaParsPool(dat=dfSim,set="District",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_District","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ss)
+res<-analysisFunBayesBetaParsPool(dat=dfSim,set="District",doPlot=TRUE,plotFile=paste(sep="",outPrefix,"S4A_mcmcPars_Pooled_District","_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),nChains=nChains,nAdapt=nAdapt,nBurn=nBurn,nIter=nIter,jagsFile=jagsFileW4ssPooled,parsVect=parsVectW4ssNoLR)
     
 ## derive positive and negative likelihood ratios
 res$mcmcObj<-getLRpLRm(res$mcmcObj)
@@ -1541,15 +1567,22 @@ res[["mcmcSummary"]]<-mcmcSumDf
 allRes[["Pooled__District"]]<-res
 
 values<-numeric(0)
-for(j in 1:length(parsVectW4ss)){
-  parTmp<-unlist(strsplit(split="\\.",parsVectW4ss[j]))
-  parTmp.name<-tolower(paste(sep=".",parTmp[1],parTmp[3]))
-  parTmp.par<-parTmp[2]
-  if(!(parTmp.name %in% tolower(res$betaPars$par))){cat(paste(sep="","Parameter ",parTmp.name," not found in MCMC parameter list.\n"))}
-  values<-c(values,res$betaPars[tolower(res$betaPars$par)==parTmp.name,parTmp.par])
+tmpParList<-parsVectW4ss[!grepl(pattern="lrp|lrm",parsVectW4ss)]
+for(j in 1:length(tmpParList)){
+  parTmp<-unlist(strsplit(split="\\.",tmpParList[j]))
+  if(length(parTmp)==1){
+    parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"))
+  }else{
+    parTmp.ab<-paste(sep=".",parTmp[1],c("a","b"),paste(collapse=".",parTmp[2:length(parTmp)]))
+  }
+  if(!(tmpParList[j] %in% res$betaPars$par)){cat(paste(sep="","Parameter ",tmpParList[j]," not found in MCMC parameter list.\n"))}
+  outTmp<-unlist(res$betaPars[res$betaPars$par==tmpParList[j],c("a","b")])
+  names(outTmp)<-parTmp.ab
+  values<-c(values,outTmp)
 }
 
 dfResW4ssFacility<-rbind(dfResW4ssFacility,values)
+
 
 if(!is.null(dim(dfResW4ssFacility))){
   dfResW4ssFacility<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("PHC","District")),dfResW4ssFacility)
@@ -1560,18 +1593,419 @@ if(!is.null(dim(dfResW4ssFacility))){
   dfResW4ssFacility<-t(as.data.frame(dfResW4ssFacility))
 }
 
-# if(!is.null(dim(dfResAcf))){
-#   dfResAcf<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads")),dfResAcf)
-#   colnames(dfResAcf)<-c(colnames(dfResPrimBayes),parsListAcf)
-# }else{
-#   dfResAcf<-as.character(c(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads")),dfResAcf))
-#   names(dfResAcf)<-c(colnames(dfResPrimBayes),parsListAcf)
-#   dfResAcf<-t(as.data.frame(dfResAcf))
-# }
+if(!is.null(dim(dfResW4ssAcf))){
+  dfResW4ssAcf<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads") & entryToStudy=="W4SS"),dfResW4ssAcf)
+  colnames(dfResW4ssAcf)<-c(colnames(dfResPrimBayes),parsVectW4ss)
+}else{
+  dfResW4ssAcf<-as.character(c(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads") & entryToStudy=="W4SS"),dfResW4ssAcf))
+  names(dfResW4ssAcf)<-c(colnames(dfResPrimBayes),parsVectW4ss)
+  dfResW4ssAcf<-t(as.data.frame(dfResW4ssAcf))
+}
+
+if(!is.null(dim(dfResCxrAcf))){
+  dfResCxrAcf<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads") & entryToStudy=="CXR"),dfResCxrAcf)
+  colnames(dfResCxrAcf)<-c(colnames(dfResPrimBayes),parsVectCxr)
+}else{
+  dfResCxrAcf<-as.character(c(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads") & entryToStudy=="CXR"),dfResCxrAcf))
+  names(dfResCxrAcf)<-c(colnames(dfResPrimBayes),parsVectCxr)
+  dfResCxrAcf<-t(as.data.frame(dfResCxrAcf))
+}
+
+if(!is.null(dim(dfResW4ssCxrAcf))){
+  dfResW4ssCxrAcf<-cbind(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads") & entryToStudy=="W4SS | CXR"),dfResW4ssCxrAcf)
+  colnames(dfResW4ssCxrAcf)<-c(colnames(dfResPrimBayes),parsVectCxr)
+}else{
+  dfResW4ssCxrAcf<-as.character(c(dfResPrimBayes %>% dplyr::filter(setting %in% c("IDP / refugees","Informal settlements","Nomads") & entryToStudy=="W4SS | CXR"),dfResW4ssCxrAcf))
+  names(dfResW4ssCxrAcf)<-c(colnames(dfResPrimBayes),parsVectCxr)
+  dfResW4ssCxrAcf<-t(as.data.frame(dfResW4ssCxrAcf))
+}
 
 write.csv(dfResW4ssFacility,row.names=F,file=paste(sep="","mockData_AnalysisResults_PCFICF_",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
-#write.csv(dfResAcf,row.names=F,file=paste(sep="","mockData_AnalysisResults_ACF_",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
-save(allRes,file=paste(sep="","mockData_AnalysisResults_",gsub(pattern="-",replacement="",Sys.Date()),".RData"))
+write.csv(dfResW4ssAcf,row.names=F,file=paste(sep="","mockData_AnalysisResults_ACF_W4SSentry",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
+write.csv(dfResCxrAcf,row.names=F,file=paste(sep="","mockData_AnalysisResults_ACF_CXRentry",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
+write.csv(dfResW4ssCxrAcf,row.names=F,file=paste(sep="","mockData_AnalysisResults_ACF_W4SSorCXRentry",gsub(pattern="-",replacement="",Sys.Date()),".csv"))
+save(list=c("allRes","dfResPrimBayes"),file=paste(sep="","mockData_AnalysisResults_",gsub(pattern="-",replacement="",Sys.Date()),".RData"))
+```
+
+#### PCF / ICF lowest level of care
+
+Below in @tbl-primAnalPcfIcf we present how we plan to present results for the overall PCF/ICF evaluation at lowest levels of primary care.
+
+```{r}
+#| label: tbl-primAnalPcfIcf
+#| tbl-cap: "PCF/ICF evaluation (all participants): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios for PHC / lowest level of primary care settings."
+
+algoNames<-c("Poolxpert.Xpert",
+             "Xpert",
+             "Lam",
+             "Cxr.Poolxpert.Xpert",
+             "Crp.Poolxpert.Xpert",
+             "Lam.Poolxpert.Xpert",
+             "CxrCrpLam.Poolxpert.Xpert",
+             "CxrLam.Poolxpert.Xpert",
+             "CrpLam.Poolxpert.Xpert",
+             "CxrCrp.Poolxpert.Xpert",
+             "Cxr.Xpert",
+             "Crp.Xpert",
+             "Lam.Xpert",
+             "CxrCrpLam.Xpert",
+             "CxrLam.Xpert",
+             "CrpLam.Xpert",
+             "CxrCrp.Xpert",
+             "Cxr.Lam",
+             "Crp.Lam",
+             "CxrCrp.Lam"
+)
+
+algoLabels<-c("Pooled Xpert Ultra --> Xpert Ultra",
+              "Xpert Ultra",
+              "LAM",
+              "CXR-CAD --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CRP --> Pooled Xpert Ultra --> Xpert Ultra",
+              "Lam --> Poolxpert --> Xpert",
+              "CXR-CAD | CRP | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CXR-CAD | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CRP | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CXR-CAD | CRP --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CXR-CAD --> Xpert Ultra",
+              "CRP --> Xpert Ultra",
+              "LAM --> Xpert Ultra",
+              "CXR-CAD | CRP | LAM --> Xpert Ultra",
+              "CXR-CAD | LAM --> Xpert Ultra",
+              "CRP | LAM --> Xpert Ultra",
+              "CXR-CAD | CRP --> Xpert Ultra",
+              "CXR-CAD --> LAM",
+              "CRP --> LAM",
+              "CXR-CAD | CRP --> LAM"
+)
+
+settings<-paste(sep="_",dfResPrimBayes$country,dfResPrimBayes$region,dfResPrimBayes$setting)
+settings<-settings[grepl(pattern="PHC",settings)]
+settings<-settings[c(length(settings),1:(length(settings)-1))]
+
+gr<-expand.grid(settings,algoNames)
+
+dfAlgos<-data.frame(
+  setting=gr[,1],
+  algo=gr[,2],
+  label=algoLabels[match(gr[,2],algoNames)],
+  prev=NA,
+  prevAS=NA,
+  sens=NA,
+  spec=NA,
+  ppv=NA,
+  npv=NA,
+  dyt=NA,
+  lrp=NA,
+  lrm=NA
+)
+
+for(j in 1:nrow(dfAlgos)){
+  res<-allRes[[as.character(dfAlgos$setting[j])]]
+  par<-dfAlgos$algo[j]
+  
+  # prevalence
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary["ptb","50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary["ptb",c("2.5%","97.5%")])),")")
+  dfAlgos$prev[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # prevalence of asymptomatics
+  tmp<-unlist(strsplit(split="_",as.character(dfAlgos$setting[j])))
+  if(tmp[1]!="Pooled"){
+    dfTmp<-dfSim %>% filter(country==tmp[1] & region==tmp[2] & setting==tmp[3])
+  }else{
+    dfTmp<-dfSim %>% filter(setting==tmp[3])
+  }
+  k<-sum(!dfTmp$w4ss)
+  n<-nrow(dfTmp)
+  pointEstimate<-round(digits=4,k/n)
+  ci<-round(digits=4,binom.test(x=k,n=n)$conf.int)
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",ci)),")")
+  dfAlgos$prevAS[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # sensitivity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","pse.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","pse.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$sens[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # specificity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","psp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","psp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$spec[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # PPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","ppv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","ppv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$ppv[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # NPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","npv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","npv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$npv[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # DYT
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","dyt.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","dyt.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$dyt[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # LR+
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrp[j]<-paste(sep=" ",pointEstimate,ci)
+  
+  # LR-
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrm.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrm.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrm[j]<-paste(sep=" ",pointEstimate,ci)
+}
+
+dfAlgos$setting<-gsub(pattern="_+",replacement=" ",dfAlgos$setting)
+
+colnames(dfAlgos)<-case_when(
+  colnames(dfAlgos)=="setting"~"Country & setting",
+  colnames(dfAlgos)=="algo"~"Algorithm code",
+  colnames(dfAlgos)=="label"~"Algorithm",
+  colnames(dfAlgos)=="prev"~"Prevalence",
+  colnames(dfAlgos)=="prevAS"~"Prevalence of asymptomatics",
+  colnames(dfAlgos)=="sens"~"Sensitivity",
+  colnames(dfAlgos)=="spec"~"Specificity",
+  colnames(dfAlgos)=="ppv"~"PPV",
+  colnames(dfAlgos)=="npv"~"NPV",
+  colnames(dfAlgos)=="dyt"~"DYT",
+  colnames(dfAlgos)=="dyd"~"DYD",
+  colnames(dfAlgos)=="lrp"~"Positive LR",
+  colnames(dfAlgos)=="lrm"~"Negative LR"
+)
+
+dfAlgos %>%
+  dplyr::select(!contains("code") & !contains("DYD") & !contains("Algorithm")) %>%
+  kable(caption="PCF/ICF algorithm evaluation for PHC / lowest levels of primary care settings (all participants). Asymptomatics proportions are estimated directly, using exact binomial confidence intervals, from the data (not modelled). All other parameters are posterior estimates from the Bayesian modelling approach.") %>%
+  kableExtra::kable_styling(full_width = FALSE) %>%
+  kableExtra::group_rows(index=table(fct_inorder(dfAlgos$Algorithm)))
+```
+
+In figure @fig-forestPcfIcf_PHC we show how we plan to summarise sensitivities and specificities (the primary interest of the performance evaluation).
+
+```{r}
+#| label: fig-forestPcfIcf_PHC
+#| fig-cap: "PCF/ICF evaluation (all participants): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings."
+#| fig-width: 11
+#| fig-height: 40
+
+algoNames<-c("Poolxpert.Xpert",
+             "Xpert",
+             "Lam",
+             "Cxr.Poolxpert.Xpert",
+             "Crp.Poolxpert.Xpert",
+             "Lam.Poolxpert.Xpert",
+             "CxrCrpLam.Poolxpert.Xpert",
+             "CxrLam.Poolxpert.Xpert",
+             "CrpLam.Poolxpert.Xpert",
+             "CxrCrp.Poolxpert.Xpert",
+             "Cxr.Xpert",
+             "Crp.Xpert",
+             "Lam.Xpert",
+             "CxrCrpLam.Xpert",
+             "CxrLam.Xpert",
+             "CrpLam.Xpert",
+             "CxrCrp.Xpert",
+             "Cxr.Lam",
+             "Crp.Lam",
+             "CxrCrp.Lam"
+)
+
+algoLabels<-c("Pooled Xpert Ultra --> Xpert Ultra",
+              "Xpert Ultra",
+              "LAM",
+              "CXR-CAD --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CRP --> Pooled Xpert Ultra --> Xpert Ultra",
+              "Lam --> Poolxpert --> Xpert",
+              "CXR-CAD | CRP | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CXR-CAD | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CRP | LAM --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CXR-CAD | CRP --> Pooled Xpert Ultra --> Xpert Ultra",
+              "CXR-CAD --> Xpert Ultra",
+              "CRP --> Xpert Ultra",
+              "LAM --> Xpert Ultra",
+              "CXR-CAD | CRP | LAM --> Xpert Ultra",
+              "CXR-CAD | LAM --> Xpert Ultra",
+              "CRP | LAM --> Xpert Ultra",
+              "CXR-CAD | CRP --> Xpert Ultra",
+              "CXR-CAD --> LAM",
+              "CRP --> LAM",
+              "CXR-CAD | CRP --> LAM"
+)
+
+settings<-paste(sep="_",dfResPrimBayes$country,dfResPrimBayes$region,dfResPrimBayes$setting)
+settings<-settings[grepl(pattern="PHC",settings)]
+settings<-settings[c(length(settings),1:(length(settings)-1))]
+
+gr<-expand.grid(settings,algoNames)
+
+dfAlgos<-data.frame(
+  setting=gr[,1],
+  algo=gr[,2],
+  label=algoLabels[match(gr[,2],algoNames)],
+  
+  sensTxt=NA,
+  sensMedian=NA,
+  sensLow=NA,
+  sensUpp=NA,
+  
+  specTxt=NA,
+  specMedian=NA,
+  specLow=NA,
+  specUpp=NA,
+  
+  ppvTxt=NA,
+  ppvMedian=NA,
+  ppvLow=NA,
+  ppvUpp=NA,
+  
+  npvTxt=NA,
+  npvMedian=NA,
+  npvLow=NA,
+  npvUpp=NA,
+  
+  dytTxt=NA,
+  dytMedian=NA,
+  dytLow=NA,
+  dytUpp=NA,
+  
+  dydTxt=NA,
+  dydMedian=NA,
+  dydLow=NA,
+  dydUpp=NA,
+  
+  lrpTxt=NA,
+  lrpMedian=NA,
+  lrpLow=NA,
+  lrpUpp=NA,
+  
+  lrmTxt=NA,
+  lrmMedian=NA,
+  lrmLow=NA,
+  lrmUpp=NA
+)
+
+for(j in 1:nrow(dfAlgos)){
+  res<-allRes[[as.character(dfAlgos$setting[j])]]
+  par<-dfAlgos$algo[j]
+  
+  # sensitivity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","pse.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","pse.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$sensTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$sensMedian[j]<-pointEstimate
+  dfAlgos$sensLow[j]<-res$mcmcSummary[paste(sep="","pse.",par),c("2.5%")]
+  dfAlgos$sensUpp[j]<-res$mcmcSummary[paste(sep="","pse.",par),c("97.5%")]
+  
+  # specificity
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","psp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","psp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$specTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$specMedian[j]<-pointEstimate
+  dfAlgos$specLow[j]<-res$mcmcSummary[paste(sep="","psp.",par),c("2.5%")]
+  dfAlgos$specUpp[j]<-res$mcmcSummary[paste(sep="","psp.",par),c("97.5%")]
+  
+  # PPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","ppv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","ppv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$ppvTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$ppvMedian[j]<-pointEstimate
+  dfAlgos$ppvLow[j]<-res$mcmcSummary[paste(sep="","ppv.",par),c("2.5%")]
+  dfAlgos$ppvUpp[j]<-res$mcmcSummary[paste(sep="","ppv.",par),c("97.5%")]
+  
+  # NPV
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","npv.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","npv.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$npvTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$npvMedian[j]<-pointEstimate
+  dfAlgos$npvLow[j]<-res$mcmcSummary[paste(sep="","npv.",par),c("2.5%")]
+  dfAlgos$npvUpp[j]<-res$mcmcSummary[paste(sep="","npv.",par),c("97.5%")]
+  
+  # DYT
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","dyt.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","dyt.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$dytTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$dytMedian[j]<-pointEstimate
+  dfAlgos$dytLow[j]<-res$mcmcSummary[paste(sep="","dyt.",par),c("2.5%")]
+  dfAlgos$dytUpp[j]<-res$mcmcSummary[paste(sep="","dyt.",par),c("97.5%")]
+  
+  # LR+
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrp.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrp.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrpTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$lrpMedian[j]<-pointEstimate
+  dfAlgos$lrpLow[j]<-res$mcmcSummary[paste(sep="","lrp.",par),c("2.5%")]
+  dfAlgos$lrpUpp[j]<-res$mcmcSummary[paste(sep="","lrp.",par),c("97.5%")]
+  
+  # LR-
+  pointEstimate<-gsub(pattern=" ",replacement="",res$mcmcSummary[paste(sep="","lrm.",par),"50%"])
+  ci<-paste(sep="","(",gsub(pattern=" ",replacement="",paste(collapse=",",res$mcmcSummary[paste(sep="","lrm.",par),c("2.5%","97.5%")])),")")
+  dfAlgos$lrmTxt[j]<-paste(sep=" ",pointEstimate,ci)
+  dfAlgos$lrmMedian[j]<-pointEstimate
+  dfAlgos$lrmLow[j]<-res$mcmcSummary[paste(sep="","lrm.",par),c("2.5%")]
+  dfAlgos$lrmUpp[j]<-res$mcmcSummary[paste(sep="","lrm.",par),c("97.5%")]
+}
+
+uniqueAlgos<-unique(dfAlgos$label)
+
+for(i in 1:length(uniqueAlgos)){
+  if(i==1){
+    dt<-c(uniqueAlgos[i],rep("",10))
+    names(dt)<-c("Setting","sensCI","sensEst","sensLow","sensHigh","Sensitivity","specCI","specEst","specLow","specHigh","Specificity")
+  }else{
+    dt<-rbind(dt,c(uniqueAlgos[i],rep("",10)))
+  }
+  dfAlgosTmp<-dfAlgos %>% dplyr::filter(label==uniqueAlgos[i])
+  dtTmp<-cbind(gsub(paste(sep="","   ",dfAlgosTmp$setting),pattern="_+",replacement=" "),
+               dfAlgosTmp$sensTxt,dfAlgosTmp$sensMedian,dfAlgosTmp$sensLow,dfAlgosTmp$sensUpp,paste(rep(" ", 20), collapse = " "),
+               dfAlgosTmp$specTxt,dfAlgosTmp$specMedian,dfAlgosTmp$specLow,dfAlgosTmp$specUpp,paste(rep(" ", 20), collapse = " "))
+  colnames(dtTmp)<-c("Setting","sensCI","sensEst","sensLow","sensHigh","Sensitivity","specCI","specEst","specLow","specHigh","Specificity")
+  dt<-rbind(dt,dtTmp)
+  rm(dtTmp,dfAlgosTmp)
+}
+
+dt<-as.data.frame(dt)
+dt$sensEst<-as.double(dt$sensEst)
+dt$sensLow<-as.double(dt$sensLow)
+dt$sensHigh<-as.double(dt$sensHigh)
+dt$specEst<-as.double(dt$specEst)
+dt$specLow<-as.double(dt$specLow)
+dt$specHigh<-as.double(dt$specHigh)
+
+dt$sensCI[dt$sensCI=="NA"]<-""
+dt$specCI[dt$specCI=="NA"]<-""
+
+# Set-up theme
+tm <- forest_theme(base_size = 10,
+                   refline_gp = gpar(lty="blank"),
+                   ci_pch = c(15),
+                   ci_col = c("steelblue"),
+                   footnote_gp = gpar(col = "darkgreen",fontsize=8),
+                   vertline_lty = c("dashed", "dashed"),
+                   vertline_col = c("darkred","orange"),
+                   # Table cell padding, width 4 and heights 3
+                   core = list(padding = unit(c(4, 3), "mm")))
+
+p <- forest(dt[,c("Setting","sensCI","Sensitivity","specCI","Specificity")],
+            est = list(dt$sensEst,dt$specEst),
+            lower = list(dt$sensLow,dt$specLow),
+            upper = list(dt$sensHigh,dt$specHigh),
+            ci_column = c(3, 5),
+            ref_line = 1,
+            vert_line = list(c(0.75,0.85),c(0.90,0.95)),
+            nudge_y = 0,
+            theme = tm,
+            xlim=c(0,1),
+            footnote="The dashed lines indicate minimum (red) and optimum (orange) thresholds.")
+
+plot(p)
+
+pdf(paste(sep="",outPrefix,"S4A_mcmcPars_forestPlot_PcfIcfPHC_",gsub(pattern="-",replacement="",Sys.Date()),".pdf"),width=11,height=40)
+plot(p)
+dev.off()
 ```
 
 <!--
@@ -1685,11 +2119,11 @@ dfAlgos %>%
 
 #### PCF / ICF district level
 
-<!--
-These PCF/ICF results (which will be for the exact same algorithms) will be presented in the same way as the results for the lowest level of care setting.
--->
+The PCF/ICF district-level results (which will be for the exact same algorithms) will be presented in the same way as the results for the lowest level of care setting (but obviously slight variation in countries for which data are available).
 
 #### ACF W4SS entry
+
+The ACF W4SS district-level results (which will be for the exact same algorithms) will be presented in the same way as the results for the lowest level of care setting (but obviously slight variation in countries for which data are available as well as multiple settings that use ACF).
 
 <!--
 Below in @tbl-primAnalBayesOneCountryAcfW4ss we present how we will present results for the overall ACF evaluations - taking the example of Cameroon informal settlements.
@@ -1786,15 +2220,12 @@ dfAlgos %>%
 
 #### ACF CXR-CAD entry
 
-<!-- 
-Below in @tbl-primAnalBayesOneCountryAcfCadCxr we present how we will present results for the overall ACF evaluations - taking the example of Cameroon informal settlements.
--->
+These will be presented similarly, though involve a different set of evaluated algorithms (see @sec-algos).
 
 #### ACF (W4SS or CXR-CAD) entry
 
-<!--
-These ACF results (which will be for the exact same algorithms) will be presented in the same way as the results for the ACF CXR-CAD entry.
--->
+These will be presented similarly, though involve a different set of evaluated algorithms (see @sec-algos).
+
 
 ## Link-up with the health economic analysis
 
@@ -1811,7 +2242,7 @@ To illustrate this computation, @tbl-primAnalBayesBeta shows the matrix of the e
 #| eval: false
 
 dfResPrimBetaBayes<-data.frame(
-  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Vietnam",3),rep("Malawi",1)),
+  country=c(rep("Cameroon",4),rep("Nigeria",4),rep("Kenya",2),rep("Bangladesh",3),rep("Brazil",2),rep("Viet Nam",3),rep("Malawi",1)),
   region=c(rep("",4+4+2+3),"Aracaju","Maceio",rep("",3+1)),
   setting=c("PHC","District","Informal settlements ACF","Children","PHC","District","Nomads","IDP / refugees","PHC","District","PHC","District","Informal settlements ACF","PHC","PHC","PHC","Informal settlements ACF","Children","PHC"),
   prevalenceTB_a=NA,
@@ -1889,7 +2320,7 @@ dfResPrimBetaBayes %>%
   pack_rows("Kenya",9,10) %>%
   pack_rows("Bangladesh",11,13) %>%
   pack_rows("Brazil",14,15) %>%
-  pack_rows("Vietnam",16,18) %>%
+  pack_rows("Viet Nam",16,18) %>%
   pack_rows("Malawi",19,19)
 ```
 
@@ -1898,7 +2329,9 @@ dfResPrimBetaBayes %>%
 
 # List of figures
 
-None in this version of the SAP. The final version will include mock-ups of the forest plots for the performance evaluations.
+@fig-forestPcfIcf_PHC: PCF/ICF evaluation (all participants): forest plots showing the Bayesian posterior estimates for sensitivity and specificity for PHC / lowest level of primary care settings.
+
+The final version of the SAP will include figures for other settings beyond PCF/ICF.
 
 # List of tables
 
@@ -1920,8 +2353,9 @@ None in this version of the SAP. The final version will include mock-ups of the 
 
 @tbl-perfSummary: Summary of the performance of individual tests compared against culture and Xpert Ultra.
 
+@tbl-primAnalPcfIcf: PCF/ICF evaluation (all participants): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios for PHC / lowest level of primary care settings.
 
-The final version of the SAP will include mock-ups of table with the performance evaluation results.
+The final version of the SAP will include mock-ups tables for other settings beyond PCF/ICF.
 
 <!--
 @tbl-primAnalBayesOneCountryPcf: Performance metric estimates of the evaluated tests in a PCF/ICF setting for an example country (Malawi).
