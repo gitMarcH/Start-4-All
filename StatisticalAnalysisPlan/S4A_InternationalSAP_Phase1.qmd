@@ -1,7 +1,7 @@
 ---
 title: "Start 4 All Phase 1 - Statistical Analysis Plan"
 author: "Marc Henrion"
-subtitle: "v1.4 (International)"
+subtitle: "v1.5 (International)"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 format:
   html:
@@ -105,7 +105,7 @@ dfAbbr %>%
 
 # Protocol version
 
-This Statistical Analysis Plan (SAP) v1.4 is based on the Start 4 All International Protocol v2.0, dated 12 June 2024.
+This Statistical Analysis Plan (SAP) v1.5 is based on the Start 4 All International Protocol v2.0, dated 12 June 2024.
 
 ## Version history
 
@@ -115,10 +115,10 @@ This Statistical Analysis Plan (SAP) v1.4 is based on the Start 4 All Internatio
 #| tbl-cap: "Version history of the SAP since v1.0."
 
 dfHist<-data.frame(
-  Version=c("1.4","1.3","1.2","1.1","1.0"),
-  Date=c("2025-05-27","2025-05-27","2024-05-27","2025-05-26","2025-05-25"),
-  Author=c("Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion"),
-  Edits=c("Slight changes to protocol summary text; revised language for PCF/ICF (facility-based) ACF (community-based) and pooled (aggregate) analysis; addition of mock-ups for community-based CXR-CAD entry to study","All analyses tested; mock-up output for PCF/ICF setting included","Clarified agorithms with pooled Xpert Ultra testing and updated JAGS files correspondingly","Descriptive analysis mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
+  Version=c("1.5","1.4","1.3","1.2","1.1","1.0"),
+  Date=c("2025-05-28","2025-05-27","2025-05-27","2024-05-27","2025-05-26","2025-05-25"),
+  Author=c("Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion","Marc Henrion"),
+  Edits=c("Added secondary analysis treating pooled Xpert --> Xpert as a single step and assuming conditional independence; Typo correction","Slight changes to protocol summary text; revised language for PCF/ICF (facility-based) ACF (community-based) and pooled (aggregate) analysis; addition of mock-ups for community-based CXR-CAD entry to study","All analyses tested; mock-up output for PCF/ICF setting included","Clarified agorithms with pooled Xpert Ultra testing and updated JAGS files correspondingly","Descriptive analysis mock-ups added; full JAGS model files added; details of MCMC run parameters; added JAGS version number; slightly revised secondary analyses","First full version of the SAP (while development versions 0.1 to 0.14 exist, no version history record was kept prior to v1.0)")
 )
 
 dfHist %>%
@@ -756,7 +756,7 @@ $$
 \end{array}
 $$
 
-6. Prior for the covariance matrix follow a satndard prior distribution for covariance matrices.
+6. Prior for the covariance matrix follow a standard prior distribution for covariance matrices.
 
 $$\Sigma\sim\mbox{invWishart}(\Lambda,\eta)\qquad \Lambda=I,\; \eta=2\cdot m+1$$
 
@@ -871,9 +871,12 @@ These will include:
 
 * Repeating the main analysis but with alternative threshold for quantitative CRP and CXR-CAD AI score (see @sec-thresholds).
 
+* Treating pooled molecular testing (the step `Pooled Xpert Ultra --> Xpert Ultra` from @sec-algos) as a single test. With this change, the conditional independence assumption of tests given TB status is more reasonable, and so we will also derive all non-single test performance parameters directly from the estimated TB prevalence and performance metrics (primarily sensitivity and specificity) of the individual tests (CRP, CXR-CAD, LAM, pooled molecular testing). This means that in Step 4 of the estimation process (for the per-country as well as the aggregate analysis) in @sec-estimation we assume a diagonal covariance matrix, and steps 6 and 7 are redundant.
+
 * Using a composite reference standard of culture and molecular testing.
 
 * Modelling performance as a function of TB prevalence.
+
 
 
 ## Sensitivity analyses
