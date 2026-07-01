@@ -497,6 +497,7 @@ This version of the CSR uses the locked data extract from 21 January 2026.
 # reading the data
 dfSim<-read.csv("../data/20260121_DataFinal/data_format.csv") # not that the 'dfSim' object originated in the SAP, where data was simulated, and this has been maintained for ease of use (i.e. direct recycling of SAP code for analysis); the data are NOT simulated; they are real-world collected data from real human participants
 dfAdditionalInfo<-read.csv("../data/20260121_DataFinal/general_characteristics.csv") # variable mh_fam_tb - TB household contact
+dfRimpacin<-read.csv("../data/20260304_Rifampicin/data format with grade & ct-values & rif (single xpt & pool) 040326.csv")
 
 nOrig<-nrow(dfSim)
 
@@ -508,6 +509,9 @@ colnames(dfSim)[colnames(dfSim)=="sex"]<-"sex_number"
 colnames(dfSim)[colnames(dfSim)=="lam"]<-"urine_lam.1"
 
 # reformatting the data
+dfSim$crp.rapid[dfSim$crp.rapid=="Oct-40"]<-"10-40" # some CRP RDT results mis-recorded in the joined data table due to what seems to have been an automatic Excel re-recording to a date format
+dfSim$crp.rapid[dfSim$crp.rapid %in% c("","Invalid")]<-NA
+
 dfSim<-dfSim %>%
   dplyr::mutate(
     PID=study_id,
@@ -629,7 +633,7 @@ dfSim<-dfSim %>%
       crp.rapid=="40-80"~1,
       crp.rapid==">80"~1,
       crp.rapid=="<10"~0,
-      crp.rapid=="Missing"~NA_integer_,
+      TRUE~NA_integer_,
     ),
     crp=case_when( 
       crp_quant>=5~1, # WHO cut-off for PLWH
@@ -720,7 +724,7 @@ dfSim<-dfSim %>%
   )
 
 dfSim<-dfSim %>%
-  dplyr::select(c(PID,country,region,setting,age,ageCentered,ageSpline1,ageSpline2,ageSpline3,ageSpline4,sex,reference,hiv,w4ss,crp,lam,cxr,poolxpert,xpert,ssm,hhContact)) 
+  dplyr::select(c(PID,country,region,setting,age,ageCentered,ageSpline1,ageSpline2,ageSpline3,ageSpline4,sex,reference,hiv,w4ss,crp,crp_sensThr10,crp.rapid,crp_quant,lam,cxr,poolxpert,xpert,ssm,hhContact)) 
 
 write.csv(dfSim,file=paste(sep="",outDir,"data_S4A_extractedOn20260121_reformattedOn",gsub(Sys.Date(),pattern="-",replacement=""),".csv"),row.names=F)
 
@@ -737,15 +741,6 @@ dfSim[sample(x=1:nrow(dfSim),size=10,replace=FALSE),] %>%
 
 dfSim<-dfSim %>%
   dplyr::mutate(ageAdultChild=factor(levels=c("Adult","Child"),ifelse(setting=="Children","Child","Adult")))
-
-dfAdditionalInfo <- dfAdditionalInfo %>%
-  dplyr::mutate(
-    rifampicinRes=case_when(
-      !is.na(mh_you_tb_trt_reg) & mh_you_tb_trt_reg==3 ~ 1,
-      !is.na(mh_you_tb_trt_reg) & mh_you_tb_trt_reg!=3 ~ 0,
-      TRUE ~ NA_integer_
-      )
-  )
 
 dfTmp<-dfAdditionalInfo %>%
   dplyr::select(
@@ -767,8 +762,7 @@ dfTmp<-dfAdditionalInfo %>%
     ci_other,
     prev_diag_tb,
     on_art,
-    occupation,
-    rifampicinRes
+    occupation
   )
 
 dfSim<-left_join(x=dfSim,y=dfTmp,by=c("PID" = "regno"))
@@ -934,6 +928,12 @@ dfSim<-dfSim %>%
       prev_diag_tb==1~"Yes",
       prev_diag_tb==2~"No",
       TRUE~NA_character_
+    )),
+    rifampicinRes=factor(levels=c("Non-resistant","Resistant","Indeterminate"), case_when(
+      dfRimpacin$mtb_rif==1~"Resistant",
+      dfRimpacin$mtb_rif==2~"Non-resistant",
+      dfRimpacin$mtb_rif==3~"Indterminate",
+      TRUE~NA_character_
     ))
   )
 
@@ -963,6 +963,7 @@ label(dfSim$otherSymptomsFct)<-"Symptoms: any other symptom(s)"
 label(dfSim$previousTbDiagnosisFct)<-"Previous TB diagnosis"
 label(dfSim$referenceFct)<-"TB status (culture)"
 label(dfSim$referenceXpertFct)<-"TB status (culture or Xpert)"
+label(dfSim$rifampicinRes)<-"Rifampicin resistance"
 
 dfSimAdults<-dfSim %>% dplyr::filter(setting!="Children")
 dfSimChildren<-dfSim %>% dplyr::filter(setting=="Children")
@@ -1242,7 +1243,7 @@ The original data contained `r nOrig` records, after filtering for missing setti
 
 Out of `r nrow(dfSim)` participants included in the analysis, `r sum(is.na(dfSim$reference))` did not have a valid culture MRS result (`r format(nmsall=2,round(digits=2,100*sum(is.na(dfSim$reference))/nrow(dfSim)))`%; recall: this is a Bayesian analysis, so these have still been included in the analysis).
 
-Out of `r nrow(dfSimAdults)` adult participants included in the analysis, `r sum(is.na(dfSimAdults$reference))` did not have a valid culture MRS result (`r format(nmsall=2,round(digits=2,100*sum(is.na(dfSimAdults$reference))/nrow(dfSimAdults)))`%; recall: this is a Bayesian analysis, so these have still been included in the analysis).
+Out of `r nrow(dfSimAdults)` adult participants included in the analysis, `r sum(is.na(dfSimAdults$reference))` did not have a valid culture MRS result (`r format(nmsall=2,round(digits=2,100*sum(is.na(dfSimAdults$reference))/nrow(dfSimAdults)))`%). As this is a Bayesian analysis, these have still been included in the analysis.
 
 Out of `r nrow(dfSim)` participants included in the analysis, `r sum(is.na(dfSim$xpert))` did not have valid single Xpert Ultra result (`r format(nmsall=2,round(digits=2,100*sum(is.na(dfSim$xpert))/nrow(dfSim)))`%).
 
@@ -1293,6 +1294,7 @@ nTotNoMV<-nPos+nNeg
 ```
 
 There were `r nPos` confirmed TB (culture MRS and / or Xpert Ultra) cases out of all `r nTotNoMV` adult HIV-negative participants with non-missing data (`r format(nsmall=2,round(digits=2,100*nPos/nTotNoMV))`%).
+
 
 ```{r}
 #| label: fig-CONSORT
@@ -14233,7 +14235,17 @@ Secondary objectives will use the results from the primary analyses. At the stag
 
 Of the `r nrow(dfSim)` total participants, `r sum(!is.na(dfSim$xpert) & dfSim$xpert==1)` had a positive single Xpert Ultra result.
 
-Of the `r nrow(dfSimAdults)` total adult participants, `r sum(!is.na(dfSimAdults$xpert) & dfSimAdults$xpert==1)` had a positive single Xpert Ultra result and of these `r `.
+```{r}
+tt<-dfSimAdults[(!is.na(dfSimAdults$reference) & dfSimAdults$reference==1) | (!is.na(dfSimAdults$xpert) & dfSimAdults$xpert==1),]
+```
+
+Of the `r nrow(dfSimAdults)` total adult participants, `r sum(!is.na(dfSimAdults$xpert) & dfSimAdults$xpert==1)` had a positive single Xpert Ultra result. Of these, `r sum(!is.na(tt$xpert) & tt$xpert==1 & !is.na(tt$rifampicinRes))` have data on rifampicin resistance and of these `r sum(!is.na(tt$xpert) & tt$xpert==1 & !is.na(tt$rifampicinRes) & tt$rifampicinRes=="Resistant")` are rifampicin-resistant (`r format(nsmall=2,round(digits=2,100*sum(!is.na(tt$xpert) & tt$xpert==1 & !is.na(tt$rifampicinRes) & tt$rifampicinRes=="Resistant")/sum(!is.na(tt$xpert) & tt$xpert==1 & !is.na(tt$rifampicinRes))))`%).
+
+```{r}
+tt<-dfSimAdults[!is.na(dfSimAdults$previousTbDiagnosisFct) & dfSimAdults$previousTbDiagnosisFct=="Yes",]
+```
+
+Of the `r nrow(dfSimAdults)` total adult participants, `r sum(!is.na(dfSimAdults$previousTbDiagnosisFct))` had data on previous TB diagnosis and `r nrow(tt)` had a previous diagnosis of TB (`r format(nsmall=2,round(digits=2,100*nrow(tt)/sum(!is.na(dfSimAdults$previousTbDiagnosisFct))))`%), of which `r sum(!is.na(tt$rifampicinRes))` have data on rifampicin resistance, with `r sum(!is.na(tt$rifampicinRes) & tt$rifampicinRes=="Resistant")` resistant for rifampicin (`r format(nsmall=2,round(digits=2,100*sum(!is.na(tt$rifampicinRes) & tt$rifampicinRes=="Resistant")/sum(!is.na(tt$rifampicinRes))))`%).
 
 Of the `r nrow(dfSim)` total participants, `r sum(!is.na(dfSim$previousTbDiagnosisFct))` had a recorded value for previous TB diagnosis and `r sum(!is.na(dfSim$previousTbDiagnosisFct) & dfSim$previousTbDiagnosisFct=="Yes")` had a previous diagnosis.
 
@@ -14253,7 +14265,64 @@ nDis<-sum(dfSimAdults$setting=="District" & !is.na(dfSimAdults$reference))
 
 Crude, unadjusted facility-level TB prevalences are `r paste0(kPhc,"/",nPhc," (",format(nsmall=2,round(digits=2,100*kPhc/nPhc)),")")` at the PHC level and `r paste0(kDis,"/",nDis," (",format(nsmall=2,round(digits=2,100*kDis/nDis)),")")` at the district level.
 
+#### CRP sensitivity analyses
 
+```{r}
+tt<-dfSimAdults[!is.na(dfSimAdults$crp_quant) & !is.na(dfSimAdults$reference),]
+
+nTP5<-sum(tt$crp==1 & tt$reference==1)
+nTP10<-sum(tt$crp_sensThr10==1 & tt$reference==1)
+sens5<-nTP5/sum(tt$reference==1)
+sens10<-nTP10/sum(tt$reference==1)
+
+nTN5<-sum(tt$crp==0 & tt$reference==0)
+nTN10<-sum(tt$crp_sensThr10==0 & tt$reference==0)
+spec5<-nTN5/sum(tt$reference==0)
+spec10<-nTN10/sum(tt$reference==0)
+
+ttCrp<-dfSimAdults[!is.na(dfSimAdults$crp_quant),]
+table(ttCrp$crp,ttCrp$crp_sensThr10,useNA="ifany")
+```
+
+Out of `r nrow(dfSimAdults)` adult participants, `r sum(!is.na(dfSimAdults$crp_quant))` had a measured CRP value and `r nrow(tt)` had recorded both CRP and culture results with `r sum(tt$reference==1)` culture positives and `r sum(tt$reference==0)` culture negatives.
+
+The crude, unadjusted sensitivity across all adults, using culture as reference, for the 5 mg/L threshold is `r paste0(nTP5,"/",sum(tt$reference==1),", (",format(snmall=2,round(digits=2,100*sens5)),"%)")`, compared to `r paste0(nTP10,"/",sum(tt$reference==1),", (",format(snmall=2,round(digits=2,100*sens10)),"%)")` for the 10 mg/L threshold.
+
+The crude, unadjusted specificity across all adults, using culture as reference, for the 5 mg/L threshold is `r paste0(nTN5,"/",sum(tt$reference==0),", (",format(snmall=2,round(digits=2,100*spec5)),"%)")`, compared to `r paste0(nTN10,"/",sum(tt$reference==0),", (",format(snmall=2,round(digits=2,100*spec10)),"%)")` for the 10 mg/L threshold.
+
+```{r}
+#| label: tbl-crpSensitivityAnalysis
+#| tbl-cap: "Mean, standard deviation, median, IQR and range for quantitative CRP for each level of the CRP RDT assay."
+
+tt<-dfSimAdults[!is.na(dfSimAdults$crp_quant),]
+
+tt<-tt %>%
+  dplyr::mutate(
+    crp.rapid=factor(crp.rapid,levels=c("<10","10-40","40-80",">80"))
+  )
+
+tabCrp<-tt %>%
+  dplyr::group_by(crp.rapid) %>%
+  dplyr::summarise(.groups="drop",
+                   Mean=format(nsmall=2,round(digits=2,mean(crp_quant))),
+                   Median=format(nsmall=2,round(median(crp_quant))),
+                   SD=format(nsmall=2,round(sd(crp_quant))),
+                   Q25=format(nsmall=2,round(quantile(crp_quant,prob=0.25))),
+                   Q75=format(nsmall=2,round(quantile(crp_quant,prob=0.75))),
+                   min=format(nsmall=2,round(min(crp_quant))),
+                   max=format(nsmall=2,round(max(crp_quant)))) %>%
+  dplyr::mutate(
+    CRP_RDT_level=crp.rapid,
+    Mean_SD=paste0(Mean," (",SD,")"),
+    Median_IQR=paste0(Median," (",Q25,",",Q75,")"),
+    Range=paste0("(",min,",",max,")")
+  ) %>%
+  dplyr::select(CRP_RDT_level,Mean_SD,Median_IQR,Range)
+
+tabCrp %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+```
 
 ### Manuscript figures
 
@@ -14697,6 +14766,8 @@ fig4
 @tbl-indivAssays_primAnalHIVnoAcf-w4sscxr: Community-based case finding evaluation of individual assays (HIV negative or unknown HIV status participants; W4SS or CAD-CXR entry): Bayesian posterior estimates for sensitivity, specificity, positive and negative predictive values and positive and negative likelihood ratios for ACF settings.
 
 @tbl-primAnalBayesBeta: Posterior beta distribution parameters for the unconditional probability parameters.
+
+@tbl-crpSensitivityAnalysis: Mean, standard deviation, median, IQR and range for quantitative CRP for each level of the CRP RDT assay.
 
 # Runtime information
 
